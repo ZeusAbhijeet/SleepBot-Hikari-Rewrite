@@ -32,8 +32,20 @@ class Mod(lightbulb.Plugin):
 		if amount <= 0 or amount > 100:
 			return await ctx.respond("Provide an amount between 1 and 100")
 		else:
-			deleted = await ctx.channel.delete_messages(amount)
-			msg = await ctx.respond("Deleted {} messages".format(len(deleted)))
+			now = dt.now(tz = pytz.timezone("UTC"))
+			
+			iterator = self.bot.rest.fetch_messages(
+				ctx.channel_id
+			).filter(lambda message: now - message.created_at.astimezone(tz = pytz.timezone("UTC")) < MAX_MESSAGE_BULK_DELETE)
+
+			iterator = iterator.limit(amount)
+			
+			iterator = iterator.map(lambda x: x.id).chunk(100)
+
+			async for messages in iterator:
+				await self.bot.rest.delete_messages(ctx.channel_id, messages)
+			
+			msg = await ctx.respond(f"Deleted Messages.")
 			await asyncio.sleep(5)
 			await msg.delete()
 
@@ -67,7 +79,6 @@ class All(slash_commands.SlashSubCommand):
 				return await context.respond("Count must be more than 0 and less than 100.")
 			
 			now = dt.now(tz = pytz.timezone("UTC"))
-			before = hikari.Snowflake.from_datetime(context.command.created_at)
 			
 			iterator = context.bot.rest.fetch_messages(
 				context.channel_id
