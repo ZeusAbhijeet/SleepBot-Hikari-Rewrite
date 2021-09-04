@@ -1,6 +1,8 @@
 import hikari
 import lightbulb
 import random
+
+from lightbulb.slash_commands.commands import Option
 import Utils
 import typing
 from lightbulb import commands, slash_commands
@@ -90,8 +92,6 @@ class About(slash_commands.SlashCommand):
 	description = "Shows information about the bot."
 	
 	enabled_guilds : typing.Optional[typing.Iterable[int]] = (GUILD_ID,)
-	
-	options = []
 
 	async def callback(self, ctx: lightbulb.Context) -> None:
 		AboutEmbed = hikari.Embed(
@@ -114,8 +114,6 @@ class Ping(slash_commands.SlashCommand):
 	description = "Shows the latency of the bot."
 	
 	enabled_guilds : typing.Optional[typing.Iterable[int]] = (GUILD_ID,)
-	
-	options = []
 
 	async def callback(self, ctx: lightbulb.Context) -> None:
 		start = time()
@@ -140,6 +138,9 @@ class Avatar(slash_commands.SlashCommand):
 	
 	enabled_guilds : typing.Optional[typing.Iterable[int]] = (GUILD_ID,)
 	
+	target : typing.Optional[hikari.User] = slash_commands.Option("The user whose avatar is to be fetched")
+
+	"""
 	options : list[hikari.CommandOption] = [
 		hikari.CommandOption(
 			name = "target",
@@ -148,6 +149,7 @@ class Avatar(slash_commands.SlashCommand):
 			is_required = False
 		),
 	]
+	"""
 
 	async def callback(self, ctx: lightbulb.Context) -> None:
 		try:

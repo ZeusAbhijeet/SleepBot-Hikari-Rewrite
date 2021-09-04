@@ -1,0 +1,36 @@
+INSERT INTO rule_table VALUES
+(NULL,
+"**Be respectful to everyone.**
+Do not flame others. Do not be a Racist or a Sexist. Sending racial slurs in any form will result in a permanent ban.
+Profanity is allowed as long as it does not break this rule."),
+
+(NULL,
+"Sending/Linking any harmful material such as viruses, infected links, IP grabbers, or harm-ware, gifs that crash discord, etc results in an immediate and permanent ban."),
+
+(NULL,
+"Any kind of promotion or referral links in any of the channels except <#752560332450299944> is not allowed. Job listings are allowed in <#752580135298924544>. DM Promotion is strictly prohibited."),
+
+(NULL,
+"Spamming in text channels is not allowed. This includes emotes, copy pasta, flooding chat by sending messages in multiple lines and large paragraphs. This will result in a mute. Sending messages too fast may result in a warn from our Automoderation Bots.
+XP farming is not allowed.
+Please keep the chats to the respective channels."),
+
+(NULL,
+"Avoid spoiling movies or games. If the movie/game was released 10+ years ago then it is exempt from this rule. For others, mark the text containing them as spoilers i.e. put the text within `|| like this ||`."),
+
+(NULL,
+"Refrain from discussing Political or Religious Topics. These tend to get out of hand pretty quick."),
+
+(NULL,
+"No playing loud, disturbing music, ear-rape or ear-forced-sex-words in VCs. This includes shouting. Posting of similar media is also prohibited."),
+
+(NULL,
+"NSFW content is strictly not allowed in the server. Breaking this rule will result in a ban."),
+
+(NULL,
+"Your nickname should be mentionable and should only contain characters typeable on a standard US keyboard. Profanity in username/nickname is also not allowed. Your nickname will be changed and you will be notified about it.
+NSFW profile pictures are also not allowed."),
+
+(NULL,
+"Stalking/sending unsolicited messages in DMs is strictly prohibited.
+If someone is doing so to you, report it to any of the Server Designers/Moderators or open a ticket by going to <#838101926838009906> and sending screenshots/proof in the ticket.");

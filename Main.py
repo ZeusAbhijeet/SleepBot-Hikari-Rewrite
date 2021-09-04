@@ -17,7 +17,7 @@ bot = lightbulb.Bot(
 
 @bot.listen(hikari.ShardReadyEvent)
 async def ready_listener(event: hikari.ShardReadyEvent):
-	extensions = ['Meta', 'Fun']
+	extensions = ['Meta', 'Fun', 'Mod']
 	for ext in extensions:
 		bot.load_extension(f"Plugins.{ext}")
 	await bot.update_presence(

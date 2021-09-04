@@ -49,7 +49,7 @@ class Fun(lightbulb.Plugin):
 
 def load(bot : Bot):
 	bot.add_plugin(Fun(bot))
-	print(f"Fun Plugin has been loaded")
+	print(f"Plugin Fun has been loaded")
 
 def unload(bot : Bot):
 	bot.remove_plugin("Fun")
