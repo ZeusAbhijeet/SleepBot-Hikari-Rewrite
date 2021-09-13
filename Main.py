@@ -1,4 +1,5 @@
 from __future__ import annotations
+from math import e
 
 from __init__ import __version__
 import hikari
@@ -17,7 +18,7 @@ bot = lightbulb.Bot(
 
 @bot.listen(hikari.ShardReadyEvent)
 async def ready_listener(event: hikari.ShardReadyEvent):
-	extensions = ['Meta', 'Fun', 'Mod']
+	extensions = ['Meta', 'Fun', 'Mod', 'Study']
 	for ext in extensions:
 		bot.load_extension(f"Plugins.{ext}")
 	await bot.update_presence(
@@ -27,7 +28,6 @@ async def ready_listener(event: hikari.ShardReadyEvent):
 						type = hikari.ActivityType.LISTENING
 				)
 	)
-	print(Utils.LOGCHANNELID)
 	await bot.rest.create_message(Utils.LOGCHANNELID, f"Bot is online at time {datetime.now().astimezone(tz('Asia/Kolkata')).strftime('%d.%m.%Y - %H:%M:%S')}")
 	print(f"Bot is ready")
 
@@ -47,10 +47,8 @@ async def load_ext(ctx : lightbulb.Context, ext : str | None) -> None:
 			bot.load_extension(f"Plugins.{ext}")
 			await ctx.respond(f"Successfully loaded {ext} Plugin")
 		except Exception as e:
-			await ctx.respond(f"Failed to load {ext} Plugin. Reason : {e}")
-@load_ext.command_error()
-async def load_ext_error(error):
-	await error.context.respond(f"Error occured. \nError Traceback:\n ```{error}```")
+			raise e
+
 
 @lightbulb.checks.has_guild_permissions(hikari.Permissions.ADMINISTRATOR)
 @bot.command(name = 'unload')
@@ -68,10 +66,7 @@ async def unload_ext(ctx : lightbulb.Context, ext : str | None) -> None:
 			bot.unload_extension(f"Plugins.{ext}")
 			await ctx.respond(f"Successfully unloaded {ext} Plugin")
 		except Exception as e:
-			await ctx.respond(f"Failed to unload {ext} Plugin. Reason : {e}")
-@unload_ext.command_error()
-async def unload_ext_error(error):
-	await error.context.respond(f"Error occured. \nError Traceback:\n ```{error}```")
+			raise e
 
 @lightbulb.checks.has_guild_permissions(hikari.Permissions.ADMINISTRATOR)
 @bot.command(name = 'reload')
@@ -90,9 +85,7 @@ async def reload_ext(ctx : lightbulb.Context, ext : str | None) -> None:
 			await ctx.respond(f"Successfully reloaded {ext} Plugin")
 		except Exception as e:
 			await ctx.respond(f"Failed to reload {ext} Plugin. Reason : {e}")
-@reload_ext.command_error()
-async def reload_ext_error(error):
-	await error.context.respond(f"Error occured. \nError Traceback:\n ```{error}```")
+
 
 @lightbulb.owner_only()
 @bot.command(name = 'logout', aliases = ['shutdown'])

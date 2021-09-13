@@ -52,6 +52,55 @@ class Mod(lightbulb.Plugin):
 			msg = await ctx.respond(f"Deleted Messages.")
 			await asyncio.sleep(5)
 			await msg.delete()
+	
+	@checks.has_guild_permissions(hikari.Permissions.MANAGE_MESSAGES)
+	@lightbulb.command(name = "clearemote", aliases = ['clearemojis', 'clearemotes'])
+	async def clear_emote_command(self, ctx : lightbulb.Context, count : typing.Optional[int] = 3):
+		"""
+		Deletes the given amount of emotes from the channel. If none is given, 3 emotes are deleted.
+		"""
+		await Utils.command_log(self.bot, ctx, "clearemote")
+		await ctx.message.delete()
+		
+		# If count given is not between 1 and 100 (1 and 100 inclusive), return
+		if count <= 0 or count > 100:
+			return await ctx.respond("Count must be more than 0 and less than 100.")
+		
+		msg = await ctx.respond(embed = hikari.Embed(description = f"<a:BotLoading:884014612637417513> Deleting {count} messages containing emotes..."))
+		
+		savecount = count
+		deleted = 0
+		msgList = []
+
+		now = dt.now(tz = pytz.timezone("UTC"))
+		iterator = self.bot.rest.fetch_messages(
+			ctx.channel_id
+		).filter(lambda message: now - message.created_at.astimezone(tz = pytz.timezone("UTC")) < MAX_MESSAGE_BULK_DELETE)
+		iterator = iterator.limit(1000)
+
+		async for messages in iterator:
+			if savecount <= 0:
+				break
+			if messages.content and messages.content.startswith("<") and messages.content.endswith(">"):
+				msgList.append(messages.id)
+				savecount -= 1
+				deleted += 1
+		
+		try:
+			await self.bot.rest.delete_messages(ctx.channel_id, msgList)
+		except NotFoundError:
+			pass
+
+		await msg.edit(
+			embed = hikari.Embed(
+				title = "Delete Emotes",
+				description = f"Deleted **{deleted}/{count}** Emojis.",
+				color = random.randint(0, 0xffffff)
+			)
+		)
+		await asyncio.sleep(5)
+		await msg.delete()
+
 
 class Clear(slash_commands.SlashCommandGroup):
 	description = "Clear Message base group"
@@ -124,6 +173,8 @@ class Emotes(slash_commands.SlashSubCommand):
 			if count <= 0 or count > 100:
 				return await context.respond("Count must be more than 0 and less than 100.")
 			
+			await context.respond(embed = hikari.Embed(description = f"<a:BotLoading:884014612637417513> Deleting {count} messages containing emotes..."))
+
 			savecount = count
 			deleted = 0
 			msgList = []
@@ -138,17 +189,24 @@ class Emotes(slash_commands.SlashSubCommand):
 			async for messages in iterator:
 				if savecount <= 0:
 					break
-				if messages.content.startswith("<") and messages.content.endswith(">"):
+				if messages.content and messages.content.startswith("<") and messages.content.endswith(">"):
 					msgList.append(messages.id)
 					savecount -= 1
 					deleted += 1
+			
 			
 			try:
 				await context.bot.rest.delete_messages(context.channel_id, msgList)
 			except NotFoundError:
 				pass
 
-			await context.respond(f"Deleted **{deleted}/{count}** Emojis.")
+			await context.edit_response(
+				embed = hikari.Embed(
+					title = "Delete Emotes",
+					description = f"Deleted **{deleted}/{count}** Emojis.",
+					color = random.randint(0, 0xffffff)
+				)
+			)
 			await asyncio.sleep(5)
 			await context.delete_response()
 

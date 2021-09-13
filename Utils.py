@@ -24,6 +24,7 @@ POINT_EARN_CHNLS = c.fetchall()
 LOGCHANNELID = int(LOGCHANNELID[0])
 POINTCMDCHANNELID = int(POINTCMDCHANNELID[0])
 RULECHANNELID = int(RULECHANNELID[0])
+STUDYTOGETHERCHANNELID = 886311520592617542
 
 conn.close()
 
@@ -40,6 +41,9 @@ async def is_point_chnl(ctx : lightbulb.Context) -> bool:
 		if int(chnl[0]) == int(ctx.channel_id):
 			return True
 	return False
+
+async def is_study_channel(ctx : lightbulb.Context) -> bool:
+	return int(ctx.channel_id) == STUDYTOGETHERCHANNELID
 
 # Logging Command
 async def command_log(bot : lightbulb.Bot, ctx : lightbulb.Context, cmdName : str):
