@@ -1,5 +1,4 @@
 from __future__ import annotations
-from math import e
 
 from __init__ import __version__
 import hikari
@@ -13,12 +12,13 @@ bot = lightbulb.Bot(
 			token = Utils.token, 
 			prefix = "?",
 			intents = hikari.Intents.ALL,
-			owner_ids = [515097702057508882]
+			owner_ids = [515097702057508882],
+			insensitive_commands = True
 		)
 
 @bot.listen(hikari.ShardReadyEvent)
 async def ready_listener(event: hikari.ShardReadyEvent):
-	extensions = ['Meta', 'Fun', 'Mod', 'Study']
+	extensions = ['Meta', 'Fun', 'Mod', 'Study', 'Welcome', 'Handler', 'Astronomy']
 	for ext in extensions:
 		bot.load_extension(f"Plugins.{ext}")
 	await bot.update_presence(
@@ -32,6 +32,7 @@ async def ready_listener(event: hikari.ShardReadyEvent):
 	print(f"Bot is ready")
 
 @lightbulb.checks.has_guild_permissions(hikari.Permissions.ADMINISTRATOR)
+#@lightbulb.checks.has_permissions(hikari.Permissions.ADMINISTRATOR)
 @bot.command(name = 'load')
 async def load_ext(ctx : lightbulb.Context, ext : str | None) -> None:
 	"""
@@ -51,6 +52,7 @@ async def load_ext(ctx : lightbulb.Context, ext : str | None) -> None:
 
 
 @lightbulb.checks.has_guild_permissions(hikari.Permissions.ADMINISTRATOR)
+#@lightbulb.checks.has_permissions(hikari.Permissions.ADMINISTRATOR)
 @bot.command(name = 'unload')
 async def unload_ext(ctx : lightbulb.Context, ext : str | None) -> None:
 	"""
@@ -69,6 +71,7 @@ async def unload_ext(ctx : lightbulb.Context, ext : str | None) -> None:
 			raise e
 
 @lightbulb.checks.has_guild_permissions(hikari.Permissions.ADMINISTRATOR)
+#@lightbulb.checks.has_permissions(hikari.Permissions.ADMINISTRATOR)
 @bot.command(name = 'reload')
 async def reload_ext(ctx : lightbulb.Context, ext : str | None) -> None:
 	"""
@@ -84,7 +87,7 @@ async def reload_ext(ctx : lightbulb.Context, ext : str | None) -> None:
 			bot.reload_extension(f"Plugins.{ext}")
 			await ctx.respond(f"Successfully reloaded {ext} Plugin")
 		except Exception as e:
-			await ctx.respond(f"Failed to reload {ext} Plugin. Reason : {e}")
+			raise e
 
 
 @lightbulb.owner_only()

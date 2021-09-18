@@ -62,7 +62,7 @@ async def command_log(bot : lightbulb.Bot, ctx : lightbulb.Context, cmdName : st
 		inline = False
 	).add_field(
 		name = "Channel :",
-		value = f"{ctx.channel}, **Channel ID** : {ctx.channel_id}",
+		value = f"{ctx.get_channel()}, **Channel ID** : {ctx.channel_id}",
 		inline = False
 	).add_field(
 		name = "Time :",

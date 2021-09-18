@@ -56,7 +56,7 @@ class Study(lightbulb.Plugin):
 			),
 			role_mentions = True
 		)
-	
+
 	@lightbulb.plugins.listener(hikari.VoiceStateUpdateEvent)
 	async def on_voice_state_update(self, event : hikari.VoiceStateUpdateEvent) -> None:
 		if event.old_state is None and event.state is not None and (event.state.channel_id == StudyVCID or event.state.channel_id == LofiStudyVCID):
