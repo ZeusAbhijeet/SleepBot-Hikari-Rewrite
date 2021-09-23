@@ -35,7 +35,7 @@ class Welcome(lightbulb.Plugin):
 		)
 		return welcomeEmbed
 	
-	@lightbulb.checks.has_guild_permissions(hikari.Permissions.ADMINISTRATOR)
+	@lightbulb.check(lightbulb.has_guild_permissions(hikari.Permissions.ADMINISTRATOR))
 	@lightbulb.command(name = 'welcomedm', aliases = ['welcomeDM'])
 	async def welcome_dm_command(self, ctx : lightbulb.Context, target : Optional[hikari.User] = None):
 		"""Send the Welcomer DM to the mentioned user. If not mentioned then sends to the author."""

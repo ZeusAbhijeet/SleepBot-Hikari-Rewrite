@@ -10,11 +10,11 @@ from lightbulb import checks
 from lightbulb.command_handler import Bot
 from typing import Optional, List
 
-FocusChannelID = 885189391226638406 #818131313810079744
-StudyBuddiesRoleID = 885190568093818931 #770667627047682058
-StudyCategoryID = 885188980520415252 #771215519193104404
-StudyVCID = 885189357244416040
-LofiStudyVCID = 885189306795319327
+FocusChannelID = 818131313810079744 #818131313810079744
+StudyBuddiesRoleID = 770667627047682058 #770667627047682058
+StudyCategoryID = 771215519193104404 #771215519193104404
+StudyVCID = 770670934565715998
+LofiStudyVCID = 818011398231687178
 
 class Study(lightbulb.Plugin):
 	def __init__(self, bot : Bot) -> None:
@@ -36,7 +36,7 @@ class Study(lightbulb.Plugin):
 			StudyVCEmbed.set_image('https://res.cloudinary.com/zeusabhijeet/image/upload/v1615211844/SleepBot/Study%20Commands/focus_you_b_words.gif')
 		return StudyVCEmbed
 	
-	@checks.check(Utils.is_study_channel)
+	@lightbulb.check(Utils.is_study_channel)
 	@lightbulb.cooldown(7200, 1, lightbulb.ChannelBucket)
 	@lightbulb.command(name="study_buddies", aliases = ['sb', 'studybuddies', 'studybuddy'])
 	async def study_buddies_command(self, ctx : lightbulb.Context, msg : Optional[str] = None) -> None:

@@ -22,7 +22,7 @@ class Mod(lightbulb.Plugin):
 		self.bot = bot
 		super().__init__()
 	
-	@checks.has_guild_permissions(hikari.Permissions.MANAGE_MESSAGES)
+	@lightbulb.check(lightbulb.has_guild_permissions(hikari.Permissions.MANAGE_MESSAGES))
 	@lightbulb.command(name = "clear", aliases = ['purge', 'delete'])
 	async def clear_all_command(self, ctx : lightbulb.Context, amount : typing.Optional[int] = 3):
 		"""
@@ -53,7 +53,7 @@ class Mod(lightbulb.Plugin):
 			await asyncio.sleep(5)
 			await msg.delete()
 	
-	@checks.has_guild_permissions(hikari.Permissions.MANAGE_MESSAGES)
+	@lightbulb.check(lightbulb.has_guild_permissions(hikari.Permissions.MANAGE_MESSAGES))
 	@lightbulb.command(name = "clearemote", aliases = ['clearemojis', 'clearemotes'])
 	async def clear_emote_command(self, ctx : lightbulb.Context, count : typing.Optional[int] = 3):
 		"""
@@ -107,6 +107,8 @@ class Clear(slash_commands.SlashCommandGroup):
 
 	enabled_guilds : typing.Optional[typing.Iterable[int]] = (GUILD_ID,)
 
+	checks = [lightbulb.has_guild_permissions(hikari.Permissions.MANAGE_MESSAGES)]
+
 @Clear.subcommand()
 class All(slash_commands.SlashSubCommand):
 	description = "Clears the given number of messages in channel"
@@ -127,35 +129,32 @@ class All(slash_commands.SlashSubCommand):
 	"""
 
 	async def callback(self, context: slash_commands.SlashCommandContext) -> None:
-		user_permissions = context.member.permissions
-		if user_permissions.any(hikari.Permissions.ADMINISTRATOR, hikari.Permissions.MANAGE_MESSAGES):
-			count = context.option_values.count
+		count = context.option_values.count
 
-			if count <= 0 or count > 100 :
-				return await context.respond("Count must be more than 0 and less than 100.")
+		if count <= 0 or count > 100 :
+			return await context.respond("Count must be more than 0 and less than 100.")
+		
+		now = dt.now(tz = pytz.timezone("UTC"))
+		
+		iterator = context.bot.rest.fetch_messages(
+			context.channel_id
+		).filter(lambda message: now - message.created_at.astimezone(tz = pytz.timezone("UTC")) < MAX_MESSAGE_BULK_DELETE)
+		
+		iterator = iterator.limit(count)
 			
-			now = dt.now(tz = pytz.timezone("UTC"))
-			
-			iterator = context.bot.rest.fetch_messages(
-				context.channel_id
-			).filter(lambda message: now - message.created_at.astimezone(tz = pytz.timezone("UTC")) < MAX_MESSAGE_BULK_DELETE)
+		iterator = iterator.map(lambda x: x.id).chunk(100)
 
-			iterator = iterator.limit(count)
+		try:
+			async for messages in iterator:
+				await context.bot.rest.delete_messages(context.channel_id, messages)
+		except NotFoundError:
+			pass
 			
-			iterator = iterator.map(lambda x: x.id).chunk(100)
+		await context.respond(f"Deleted Messages.")
+		await asyncio.sleep(5)
+		await context.delete_response()
 
-			try:
-				async for messages in iterator:
-					await context.bot.rest.delete_messages(context.channel_id, messages)
-			except NotFoundError:
-				pass
-			
-			await context.respond(f"Deleted Messages.")
-			await asyncio.sleep(5)
-			await context.delete_response()
-
-		else:
-			await context.respond(f"You do not have the required permissions to run this command", flags = hikari.MessageFlag.EPHEMERAL)
+	
 
 @Clear.subcommand()
 class Emotes(slash_commands.SlashSubCommand):
@@ -165,53 +164,51 @@ class Emotes(slash_commands.SlashSubCommand):
 
 	count : int = Option("Number of Emojis to delete", required = True)
 
+	#checks = [lightbulb.has_guild_permissions(hikari.Permissions.MANAGE_MESSAGES)]
+
 	async def callback(self, context: slash_commands.SlashCommandContext) -> None:
-		user_permissions = context.member.permissions
-		if user_permissions.any(hikari.Permissions.ADMINISTRATOR, hikari.Permissions.MANAGE_MESSAGES):
-			count = context.option_values.count
+		count = context.option_values.count
 
-			if count <= 0 or count > 100:
-				return await context.respond("Count must be more than 0 and less than 100.")
-			
-			await context.respond(embed = hikari.Embed(description = f"<a:BotLoading:884014612637417513> Deleting {count} messages containing emotes..."))
+		if count <= 0 or count > 100:
+			return await context.respond("Count must be more than 0 and less than 100.")
+		
+		await context.respond(embed = hikari.Embed(description = f"<a:BotLoading:884014612637417513> Deleting {count} messages containing emotes..."))
 
-			savecount = count
-			deleted = 0
-			msgList = []
+		savecount = count
+		deleted = 0
+		msgList = []
 
-			now = dt.now(tz = pytz.timezone("UTC"))
-			iterator = context.bot.rest.fetch_messages(
-				context.channel_id
-			).filter(lambda message: now - message.created_at.astimezone(tz = pytz.timezone("UTC")) < MAX_MESSAGE_BULK_DELETE)
+		now = dt.now(tz = pytz.timezone("UTC"))
+		iterator = context.bot.rest.fetch_messages(
+			context.channel_id
+		).filter(lambda message: now - message.created_at.astimezone(tz = pytz.timezone("UTC")) < MAX_MESSAGE_BULK_DELETE)
 
-			iterator = iterator.limit(1000)
+		iterator = iterator.limit(1000)
 
-			async for messages in iterator:
-				if savecount <= 0:
-					break
-				if messages.content and messages.content.startswith("<") and messages.content.endswith(">"):
-					msgList.append(messages.id)
-					savecount -= 1
-					deleted += 1
+		async for messages in iterator:
+			if savecount <= 0:
+				break
+			if messages.content and messages.content.startswith("<") and messages.content.endswith(">"):
+				msgList.append(messages.id)
+				savecount -= 1
+				deleted += 1
 			
 			
-			try:
-				await context.bot.rest.delete_messages(context.channel_id, msgList)
-			except NotFoundError:
-				pass
+		try:
+			await context.bot.rest.delete_messages(context.channel_id, msgList)
+		except NotFoundError:
+			pass
 
-			await context.edit_response(
-				embed = hikari.Embed(
-					title = "Delete Emotes",
-					description = f"Deleted **{deleted}/{count}** Emojis.",
-					color = random.randint(0, 0xffffff)
-				)
+		await context.edit_response(
+			embed = hikari.Embed(
+				title = "Delete Emotes",
+				description = f"Deleted **{deleted}/{count}** Emojis.",
+				color = random.randint(0, 0xffffff)
 			)
-			await asyncio.sleep(5)
-			await context.delete_response()
+		)
+		await asyncio.sleep(5)
+		await context.delete_response()
 
-		else:
-			await context.respond(f"You do not have the required permissions to run this command", flags = hikari.MessageFlag.EPHEMERAL)
 
 def load(bot : Bot):
 	bot.add_plugin(Mod(bot))

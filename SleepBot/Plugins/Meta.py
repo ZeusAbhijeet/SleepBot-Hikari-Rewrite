@@ -1,6 +1,8 @@
 import hikari
+from hikari.interactions.component_interactions import ComponentInteraction
 import lightbulb
 import random
+import asyncio
 
 from lightbulb.slash_commands.commands import Option
 import Utils
@@ -52,7 +54,7 @@ class Meta(lightbulb.Plugin):
 			colour = random.randint(0, 0xffffff)
 		).add_field(
 			name = "Contribute to SleepBot!", 
-			value= "SleepBot is an Open Source bot with it's source code available [here](https://github.com/Clinify-Open-Sauce/SleepBot). You are free to contribute to it!",
+			value= "SleepBot is an Open Source bot with it's source code available [here](https://github.com/ZeusAbhijeet/SleepBot-Hikari-Rewrite). You are free to contribute to it!",
 			inline = False
 		).set_footer(
 			text = f"Requested by {ctx.author.username} | Version v{__version__}",
@@ -60,7 +62,20 @@ class Meta(lightbulb.Plugin):
 		).set_thumbnail(
 			'https://res.cloudinary.com/zeusabhijeet/image/upload/v1607093923/SleepBot/Info%20Commands/SleepBot_Image.png'
 		)
-		await ctx.respond(embed = AboutEmbed)
+		row = self.bot.rest.build_action_row()
+		row.add_button(
+			hikari.ButtonStyle.LINK, 
+			"https://github.com/ZeusAbhijeet/SleepBot-Hikari-Rewrite"
+		).set_label(
+			"SleepBot Repository"
+		).add_to_container()
+		row.add_button(
+			hikari.ButtonStyle.LINK,
+			"https://www.bluelearn.in/"
+		).set_label(
+			"Bluelearn Website"
+		).add_to_container()
+		await ctx.respond(embed = AboutEmbed, component = row)
 	
 	@lightbulb.command(name = "avatar", aliases = ["av"])
 	async def avatar_command(self, ctx : lightbulb.Context, target : Optional[hikari.Member] = None):
@@ -87,6 +102,40 @@ class Meta(lightbulb.Plugin):
 				icon = self.bot.get_me().avatar_url
 			)
 		)
+	
+	@lightbulb.command(name = 'test')
+	async def test_command(self, ctx : lightbulb.Context):
+		row = self.bot.rest.build_action_row()
+		row.add_button(hikari.ButtonStyle.PRIMARY, 'test_button').set_label("Sup").add_to_container()
+		msg = await ctx.respond("Yo", component = row)
+
+		timer_task = asyncio.create_task(asyncio.sleep(120))
+		async with self.bot.stream(hikari.InteractionCreateEvent, None).filter(("interaction.message.id", msg.id)) as stream:
+			while True:
+				stream_task = asyncio.create_task(stream.__anext__())
+				done, pending = await asyncio.wait((timer_task, stream_task), return_when = asyncio.FIRST_COMPLETED)
+				if timer_task in done:
+					for task in pending:
+						task.cancel()
+					return await msg.edit(content = "been 120 seconds", component = None)
+				
+				event = await stream_task
+				if not isinstance(event.interaction, ComponentInteraction):
+					continue
+				
+				interaction : ComponentInteraction = event.interaction
+				if interaction.user.id != ctx.author.id:
+					continue
+
+				if interaction.custom_id == "test_button":
+					await interaction.create_initial_response(response_type = hikari.ResponseType.MESSAGE_CREATE, content = "You've pressed the button", flags = hikari.MessageFlag.EPHEMERAL)
+
+	@lightbulb.command(name = 'website')
+	async def bl_website_link(self, ctx : lightbulb.Context):
+		"""Sends a link to the Bluelearn Website"""
+		row = self.bot.rest.build_action_row()
+		row.add_button(hikari.ButtonStyle.LINK, "https://www.bluelearn.in/").set_label("Take Me to Bluelearn's Website").set_emoji("↗️").add_to_container()
+		await ctx.respond(f"Click on the button below to head over to Bluelearn's website.", component = row)
 
 class About(slash_commands.SlashCommand):
 	description = "Shows information about the bot."
@@ -100,7 +149,7 @@ class About(slash_commands.SlashCommand):
 			colour = random.randint(0, 0xffffff)
 		).add_field(
 			name = "Contribute to SleepBot!", 
-			value= "SleepBot is an Open Source bot with it's source code available [here](https://github.com/Clinify-Open-Sauce/SleepBot). You are free to contribute to it!",
+			value= "SleepBot is an Open Source bot with it's source code available [here](https://github.com/ZeusAbhijeet/SleepBot-Hikari-Rewrite). You are free to contribute to it!",
 			inline = False
 		).set_footer(
 			text = f"Requested by {ctx.author.username} | Version v{__version__}",
@@ -108,7 +157,20 @@ class About(slash_commands.SlashCommand):
 		).set_thumbnail(
 			'https://res.cloudinary.com/zeusabhijeet/image/upload/v1607093923/SleepBot/Info%20Commands/SleepBot_Image.png'
 		)
-		await ctx.respond(embed = AboutEmbed)
+		row = self.bot.rest.build_action_row()
+		row.add_button(
+			hikari.ButtonStyle.LINK, 
+			"https://github.com/ZeusAbhijeet/SleepBot-Hikari-Rewrite"
+		).set_label(
+			"SleepBot Repository"
+		).add_to_container()
+		row.add_button(
+			hikari.ButtonStyle.LINK,
+			"https://www.bluelearn.in/"
+		).set_label(
+			"Bluelearn Website"
+		).add_to_container()
+		await ctx.respond(embed = AboutEmbed, component = row)
 
 class Ping(slash_commands.SlashCommand):
 	description = "Shows the latency of the bot."

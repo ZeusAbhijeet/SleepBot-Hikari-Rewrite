@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 
 from __init__ import __version__
 import hikari
@@ -7,6 +8,12 @@ import lightbulb
 from datetime import datetime
 from pytz import timezone as tz
 import Utils
+import os
+
+if os.name != "nt":
+	import uvloop
+	uvloop.install()
+
 
 bot = lightbulb.Bot(
 			token = Utils.token, 
@@ -18,7 +25,7 @@ bot = lightbulb.Bot(
 
 @bot.listen(hikari.ShardReadyEvent)
 async def ready_listener(event: hikari.ShardReadyEvent):
-	extensions = ['Meta', 'Fun', 'Mod', 'Study', 'Welcome', 'Handler', 'Astronomy']
+	extensions = ['Meta', 'Fun', 'Mod', 'Study', 'Welcome', 'Handler', 'Astronomy', 'Roles', 'Points']
 	for ext in extensions:
 		bot.load_extension(f"Plugins.{ext}")
 	await bot.update_presence(
@@ -30,8 +37,10 @@ async def ready_listener(event: hikari.ShardReadyEvent):
 	)
 	await bot.rest.create_message(Utils.LOGCHANNELID, f"Bot is online at time {datetime.now().astimezone(tz('Asia/Kolkata')).strftime('%d.%m.%Y - %H:%M:%S')}")
 	print(f"Bot is ready")
+	asyncio.create_task(Utils.Backup(bot))
+	
 
-@lightbulb.checks.has_guild_permissions(hikari.Permissions.ADMINISTRATOR)
+@lightbulb.check(lightbulb.has_guild_permissions(hikari.Permissions.ADMINISTRATOR))
 #@lightbulb.checks.has_permissions(hikari.Permissions.ADMINISTRATOR)
 @bot.command(name = 'load')
 async def load_ext(ctx : lightbulb.Context, ext : str | None) -> None:
@@ -51,7 +60,7 @@ async def load_ext(ctx : lightbulb.Context, ext : str | None) -> None:
 			raise e
 
 
-@lightbulb.checks.has_guild_permissions(hikari.Permissions.ADMINISTRATOR)
+@lightbulb.check(lightbulb.has_guild_permissions(hikari.Permissions.ADMINISTRATOR))
 #@lightbulb.checks.has_permissions(hikari.Permissions.ADMINISTRATOR)
 @bot.command(name = 'unload')
 async def unload_ext(ctx : lightbulb.Context, ext : str | None) -> None:
@@ -70,7 +79,7 @@ async def unload_ext(ctx : lightbulb.Context, ext : str | None) -> None:
 		except Exception as e:
 			raise e
 
-@lightbulb.checks.has_guild_permissions(hikari.Permissions.ADMINISTRATOR)
+@lightbulb.check(lightbulb.has_guild_permissions(hikari.Permissions.ADMINISTRATOR))
 #@lightbulb.checks.has_permissions(hikari.Permissions.ADMINISTRATOR)
 @bot.command(name = 'reload')
 async def reload_ext(ctx : lightbulb.Context, ext : str | None) -> None:
@@ -90,7 +99,7 @@ async def reload_ext(ctx : lightbulb.Context, ext : str | None) -> None:
 			raise e
 
 
-@lightbulb.owner_only()
+@lightbulb.check(lightbulb.owner_only)
 @bot.command(name = 'logout', aliases = ['shutdown'])
 async def logout_command(ctx : lightbulb.Context) -> None:
 	"""Shuts down the bot"""
