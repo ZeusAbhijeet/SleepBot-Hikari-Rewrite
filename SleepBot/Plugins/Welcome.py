@@ -15,12 +15,15 @@ class Welcome(lightbulb.Plugin):
 	def WelcomeEmbed(self, target : hikari.User) -> hikari.Embed:
 		welcomeEmbed = hikari.Embed(
 			title = "Welcome to the Bluelearn Discord Server!",
-			description = "Make sure that you have a **verified email connected to your account** so that you can interact in the server. \nHere are a few things that you can do:",
+			description = """BlueLearn is a student's community based on skill development and entrepreneurship. Learn and Network with like minded people in the Community.
+			50,000 students from 3,500 schools and colleges use BlueLearn to hangout, meet new people, learn skills not taught in traditional education, and become future builders and creators of India!
+			
+			Make sure that you have a **verified email connected to your account** so that you can interact in the server. \nHere are a few things that you can do:""",
 			color = random.randint(0, 0xffffff),
 			url = 'https://www.bluelearn.in/'
 		).add_field(
 			name = "Read the rules",
-			value = "Read the rules in the `Rules channel mention here` channel carefully"
+			value = f"Read the rules in the <#{int(Utils.RULECHANNELID)}> channel carefully"
 		).add_field(
 			name = "Check out the Server Guide Video",
 			value = "If you are new to discord, you can watch a tutorial video which will help you to go about the server.\n**Tutorial:** [Click here](https://youtu.be/AUimFYOBXYU?t=291)"
@@ -41,13 +44,26 @@ class Welcome(lightbulb.Plugin):
 		"""Send the Welcomer DM to the mentioned user. If not mentioned then sends to the author."""
 		if target is None:
 			target = ctx.author
-		
-		await target.send(embed = self.WelcomeEmbed(target))
+		row = self.bot.rest.build_action_row()
+		row.add_button(
+			hikari.ButtonStyle.LINK,
+			"https://youtu.be/AUimFYOBXYU?t=291"
+		).set_label(
+			"Server Guide Video"
+		).add_to_container()
+		await target.send(embed = self.WelcomeEmbed(target), component = row)
 		await ctx.respond(f"Successfully sent DM to {target.mention}")
 	
 	@lightbulb.listener(hikari.MemberCreateEvent)
 	async def on_member_join(self, event : hikari.MemberCreateEvent):
-		await event.member.send(embed = self.WelcomeEmbed(event.user))
+		row = self.bot.rest.build_action_row()
+		row.add_button(
+			hikari.ButtonStyle.LINK,
+			"https://youtu.be/AUimFYOBXYU?t=291"
+		).set_label(
+			"Server Guide Video"
+		).add_to_container()
+		await event.member.send(embed = self.WelcomeEmbed(event.user), component = row)
 		await self.bot.rest.create_message(
 			Utils.LOGCHANNELID,
 			embed = hikari.Embed(

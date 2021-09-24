@@ -142,7 +142,8 @@ class Points(lightbulb.Plugin):
 		)
 		for user in total_coins:
 			try:
-				member = await self.bot.rest.fetch_member(ctx.guild_id, int(user[0]))
+				member = ctx.guild.get_member(int(user[0]))
+				#member = await self.bot.rest.fetch_member(ctx.guild_id, int(user[0]))
 			except:
 				continue
 			if member == None:
