@@ -24,7 +24,7 @@ class Study(lightbulb.Plugin):
 	def StudyVCJoinMessage(self, member : hikari.Member, NoOfRoles):
 		StudyVCEmbed = hikari.Embed(
 			title = f"It's Focus Time, {member.display_name}!",
-			description = f"To help you focus, you have been muted in all channels except <#886311520592617542>.",
+			description = f"To help you focus, you have been muted in all channels except <#{Utils.STUDYTOGETHERCHANNELID}>.",
 			color = random.randint(0, 0xffffff)
 		).add_field(
 			name = "How do I get unmuted?",
@@ -39,7 +39,7 @@ class Study(lightbulb.Plugin):
 	@lightbulb.check(Utils.is_study_channel)
 	@lightbulb.cooldown(7200, 1, lightbulb.ChannelBucket)
 	@lightbulb.command(name="study_buddies", aliases = ['sb', 'studybuddies', 'studybuddy'])
-	async def study_buddies_command(self, ctx : lightbulb.Context, msg : Optional[str] = None) -> None:
+	async def study_buddies_command(self, ctx : lightbulb.Context, *, msg : str = None) -> None:
 		"""
 		Ping the Study Buddies role to invite people to study with you
 		"""
@@ -63,6 +63,8 @@ class Study(lightbulb.Plugin):
 			UserRoles = len(event.state.member.get_roles())
 			await self.bot.rest.create_message(FocusChannelID, f"{event.state.member.mention}", embed = self.StudyVCJoinMessage(event.state.member, UserRoles), user_mentions = True)
 		elif event.old_state is not None and event.state is not None and (event.state.channel_id == StudyVCID or event.state.channel_id == LofiStudyVCID):
+			if event.old_state.channel_id == StudyVCID or event.old_state.channel_id == LofiStudyVCID:
+				return
 			UserRoles = len(event.state.member.get_roles())
 			await self.bot.rest.create_message(FocusChannelID, f"{event.state.member.mention}", embed = self.StudyVCJoinMessage(event.state.member, UserRoles), user_mentions = True)
 	

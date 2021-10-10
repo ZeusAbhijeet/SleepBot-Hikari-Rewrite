@@ -3,15 +3,16 @@ from hikari.interactions.component_interactions import ComponentInteraction
 import lightbulb
 import random
 import asyncio
-
-from lightbulb.slash_commands.commands import Option
 import Utils
 import typing
-from lightbulb import commands, slash_commands
+
+from lightbulb import slash_commands
 from lightbulb.command_handler import Bot
 from time import time
 from typing import Optional
 from __init__ import GUILD_ID, __version__
+from hikari import __version__ as hikari_version
+from lightbulb import __version__ as lightbulb_version
 
 class Meta(lightbulb.Plugin):
 	def __init__(self, bot : Bot) -> None:
@@ -50,17 +51,19 @@ class Meta(lightbulb.Plugin):
 		await Utils.command_log(self.bot, ctx, "about")
 		AboutEmbed = hikari.Embed(
 			title = "About SleepBot",
-			description = "SleepBot is a custom coded and open source bot made by [ZeusAbhijeet](https://github.com/ZeusAbhijeet/) for [Bluelearn.in](https://www.bluelearn.in/) Discord Server. It is written in Python and uses [Hikari-lightbulb](https://github.com/hikari-py/hikari) library.",
+			description = "SleepBot is a custom coded and open source bot made by [ZeusAbhijeet](https://github.com/ZeusAbhijeet/) for [Bluelearn.in](https://www.bluelearn.in/) Discord Server. It is written in Python and uses [Hikari](https://github.com/hikari-py/hikari) API wrapper and [Lightbulb](https://github.com/tandemdude/hikari-lightbulb) Command Wrapper.",
 			colour = random.randint(0, 0xffffff)
 		).add_field(
 			name = "Contribute to SleepBot!", 
 			value= "SleepBot is an Open Source bot with it's source code available [here](https://github.com/ZeusAbhijeet/SleepBot-Hikari-Rewrite). You are free to contribute to it!",
 			inline = False
-		).set_footer(
-			text = f"Requested by {ctx.author.username} | Version v{__version__}",
+		).set_author(
+			name = ctx.author.username,
 			icon = ctx.author.avatar_url
 		).set_thumbnail(
 			'https://res.cloudinary.com/zeusabhijeet/image/upload/v1607093923/SleepBot/Info%20Commands/SleepBot_Image.png'
+		).set_footer(
+			text = f"SleepBot v{__version__} | hikari v{hikari_version} | lightbulb v{lightbulb_version}"
 		)
 		row = self.bot.rest.build_action_row()
 		row.add_button(
@@ -145,17 +148,19 @@ class About(slash_commands.SlashCommand):
 	async def callback(self, ctx: lightbulb.Context) -> None:
 		AboutEmbed = hikari.Embed(
 			title = "About SleepBot",
-			description = "SleepBot is a custom coded and open source bot made by [ZeusAbhijeet](https://github.com/ZeusAbhijeet/) for [Bluelearn.in](https://www.bluelearn.in/) Discord Server. It is written in Python and uses [Hikari-lightbulb](https://github.com/hikari-py/hikari) library.",
+			description = "SleepBot is a custom coded and open source bot made by [ZeusAbhijeet](https://github.com/ZeusAbhijeet/) for [Bluelearn.in](https://www.bluelearn.in/) Discord Server. It is written in Python and uses [Hikari](https://github.com/hikari-py/hikari) API wrapper and [Lightbulb](https://github.com/tandemdude/hikari-lightbulb) Command Wrapper.",
 			colour = random.randint(0, 0xffffff)
 		).add_field(
 			name = "Contribute to SleepBot!", 
 			value= "SleepBot is an Open Source bot with it's source code available [here](https://github.com/ZeusAbhijeet/SleepBot-Hikari-Rewrite). You are free to contribute to it!",
 			inline = False
-		).set_footer(
-			text = f"Requested by {ctx.author.username} | Version v{__version__}",
+		).set_author(
+			name = ctx.author.username,
 			icon = ctx.author.avatar_url
 		).set_thumbnail(
 			'https://res.cloudinary.com/zeusabhijeet/image/upload/v1607093923/SleepBot/Info%20Commands/SleepBot_Image.png'
+		).set_footer(
+			text = f"SleepBot v{__version__} | hikari v{hikari_version} | lightbulb v{lightbulb_version}"
 		)
 		row = self.bot.rest.build_action_row()
 		row.add_button(
@@ -213,10 +218,10 @@ class Avatar(slash_commands.SlashCommand):
 	]
 	"""
 
-	async def callback(self, ctx: lightbulb.Context) -> None:
+	async def callback(self, ctx: lightbulb.SlashCommandContext) -> None:
 		try:
-			target : hikari.Member = ctx.guild.get_member(int(ctx.options["target"].value))
-		except KeyError:
+			target : hikari.Member = ctx.get_guild().get_member(int(ctx.options.target))
+		except:
 			target = ctx.author
 		
 		await ctx.respond(

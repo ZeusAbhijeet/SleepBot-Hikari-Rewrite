@@ -1,12 +1,11 @@
 from __future__ import annotations
-import asyncio
 
 from __init__ import __version__
 import hikari
-from hikari import intents
 import lightbulb
 from datetime import datetime
 from pytz import timezone as tz
+from typing import Optional
 import Utils
 import os
 
@@ -25,9 +24,12 @@ bot = lightbulb.Bot(
 
 @bot.listen(hikari.ShardReadyEvent)
 async def ready_listener(event: hikari.ShardReadyEvent):
-	extensions = ['Meta', 'Fun', 'Mod', 'Study', 'Welcome', 'Handler', 'Astronomy', 'Roles', 'Points']
+	extensions = ['Meta', 'Fun', 'Mod', 'Study', 'Welcome', 'Handler', 'Astronomy', 'Roles', 'Rules']
+	"""
 	for ext in extensions:
 		bot.load_extension(f"Plugins.{ext}")
+	"""
+	bot.load_extensions_from("./Plugins")
 	await bot.update_presence(
 				status = hikari.Status.ONLINE,
 				activity = hikari.Activity(
@@ -37,7 +39,7 @@ async def ready_listener(event: hikari.ShardReadyEvent):
 	)
 	await bot.rest.create_message(Utils.LOGCHANNELID, f"Bot is online at time {datetime.now().astimezone(tz('Asia/Kolkata')).strftime('%d.%m.%Y - %H:%M:%S')}")
 	print(f"Bot is ready")
-	asyncio.create_task(Utils.Backup(bot))
+	#asyncio.create_task(Utils.Backup(bot))
 	
 
 @lightbulb.check(lightbulb.has_guild_permissions(hikari.Permissions.ADMINISTRATOR))
@@ -82,7 +84,7 @@ async def unload_ext(ctx : lightbulb.Context, ext : str | None) -> None:
 @lightbulb.check(lightbulb.has_guild_permissions(hikari.Permissions.ADMINISTRATOR))
 #@lightbulb.checks.has_permissions(hikari.Permissions.ADMINISTRATOR)
 @bot.command(name = 'reload')
-async def reload_ext(ctx : lightbulb.Context, ext : str | None) -> None:
+async def reload_ext(ctx : lightbulb.Context, ext : Optional[str] = None) -> None:
 	"""
 	Reloads an already loaded plugin.
 	"""
@@ -91,6 +93,12 @@ async def reload_ext(ctx : lightbulb.Context, ext : str | None) -> None:
 			f"Please provide a Plugin name.",
 			reply = True
 	)
+	elif ext == "all":
+		try:
+			bot.reload_all_extensions()
+			await ctx.respond(f"Reloaded all plugins successfully.")
+		except Exception as e:
+			raise e
 	elif ext is not None:
 		try:
 			bot.reload_extension(f"Plugins.{ext}")

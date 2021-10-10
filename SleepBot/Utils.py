@@ -30,7 +30,7 @@ DB_POINT = c.fetchall()
 LOGCHANNELID : int = int(LOGCHANNELID[0])
 POINTCMDCHANNELID = int(POINTCMDCHANNELID[0])
 RULECHANNELID = int(RULECHANNELID[0])
-STUDYTOGETHERCHANNELID = 770940461337804810
+STUDYTOGETHERCHANNELID = int(770940461337804810)
 
 conn.close()
 
@@ -54,7 +54,7 @@ async def is_study_channel(ctx : lightbulb.Context) -> bool:
 # Logging Command
 async def command_log(bot : lightbulb.Bot, ctx : lightbulb.Context, cmdName : str):
 	LogEmbed = hikari.Embed(
-		title = "Sleep Command Logs",
+		title = "SleepBot Command Logs",
 		color = random.randint(0, 0xffffff)
 	).add_field(
 		name = "Command",
@@ -78,13 +78,13 @@ async def command_log(bot : lightbulb.Bot, ctx : lightbulb.Context, cmdName : st
 
 	await bot.rest.create_message(LOGCHANNELID, embed = LogEmbed)
 
-
+"""
 async def Backup(bot : Bot):
 	global POINT
 	global DB_POINT
 	while bot.is_alive:
 		await bot.rest.create_message(int(LOGCHANNELID), f"Backup OK: ```{datetime.now()}```")
-		await asyncio.sleep(1800)
+		await asyncio.sleep(300)
 		conn = sqlite3.connect('Database.db')
 		c = conn.cursor()
 
@@ -95,7 +95,7 @@ async def Backup(bot : Bot):
 
 		for user in DB_POINT:
 			if user[0] in POINT:
-				c.execute("UPDATE point_table SET points = {} WHERE user_id = {};".format(POINT[user[0]] + user[1], user[0]))
+				c.execute("UPDATE point_table SET points = {} WHERE user_id = {}".format(POINT[user[0]] + user[1], user[0]))
 		is_instance = False
 		for user in POINT:
 			for elm in DB_POINT:
@@ -113,7 +113,9 @@ async def Backup(bot : Bot):
 		conn.close()
 
 		POINT = {}
-"""
+
+
+This one is the old one btw
 async def Backup(client):
 	await client.wait_until_ready()
 	global POINT

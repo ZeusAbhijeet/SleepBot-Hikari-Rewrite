@@ -1,5 +1,4 @@
 from hikari.errors import NotFoundError
-from hikari.undefined import count
 from lightbulb.slash_commands.commands import Option, SlashSubCommand
 import pytz
 import typing
@@ -117,6 +116,7 @@ class All(slash_commands.SlashSubCommand):
 
 	count : int = Option("Number of Messages to delete", required = True)
 	
+	checks = [lightbulb.has_guild_permissions(hikari.Permissions.MANAGE_MESSAGES)]
 	"""
 	options : list[hikari.CommandOption] = [
 		hikari.CommandOption(
@@ -129,7 +129,7 @@ class All(slash_commands.SlashSubCommand):
 	"""
 
 	async def callback(self, context: slash_commands.SlashCommandContext) -> None:
-		count = context.option_values.count
+		count = context.options.count
 
 		if count <= 0 or count > 100 :
 			return await context.respond("Count must be more than 0 and less than 100.")
@@ -164,10 +164,11 @@ class Emotes(slash_commands.SlashSubCommand):
 
 	count : int = Option("Number of Emojis to delete", required = True)
 
+	checks = [lightbulb.has_guild_permissions(hikari.Permissions.MANAGE_MESSAGES)]
 	#checks = [lightbulb.has_guild_permissions(hikari.Permissions.MANAGE_MESSAGES)]
 
 	async def callback(self, context: slash_commands.SlashCommandContext) -> None:
-		count = context.option_values.count
+		count = context.options.count
 
 		if count <= 0 or count > 100:
 			return await context.respond("Count must be more than 0 and less than 100.")
