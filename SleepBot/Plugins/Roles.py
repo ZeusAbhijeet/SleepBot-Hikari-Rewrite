@@ -1,6 +1,7 @@
 from os import name
 from hikari.interactions.component_interactions import ComponentInteraction
 import hikari
+from hikari.messages import ButtonStyle
 import lightbulb
 import random
 import sqlite3
@@ -81,6 +82,40 @@ class Roles(lightbulb.Plugin):
 
 		await ctx.message.delete()
 		await ctx.respond(f"Select the colour you want your display name to show up in.", component = ColourRolesRow)
+	
+	@lightbulb.check(lightbulb.has_guild_permissions(Permissions.MANAGE_ROLES))
+	@lightbulb.command(name = 'squad_role_menu', aliases = ['squadrolemenu', 'squadrm'])
+	async def squad_role_menu(self, ctx : lightbulb.Context) -> None:
+		SquadRolesRow = self.bot.rest.build_action_row()
+		SquadRolesRow2 = self.bot.rest.build_action_row()
+		SquadRolesRow.add_button(
+			hikari.ButtonStyle.PRIMARY,
+			'ASTRONOMY'
+		).set_label("Astronomy Squad").add_to_container()
+		SquadRolesRow.add_button(
+			hikari.ButtonStyle.PRIMARY,
+			'FINANCE'
+		).set_label("Finance Squad").add_to_container()
+		SquadRolesRow.add_button(
+			hikari.ButtonStyle.PRIMARY,
+			'CODING'
+		).set_label("Coding Squad").add_to_container()
+		
+		SquadRolesRow2.add_button(
+			hikari.ButtonStyle.SECONDARY,
+			'ANIME'
+		).set_label("Anime Squad").add_to_container()
+		SquadRolesRow2.add_button(
+			hikari.ButtonStyle.SECONDARY,
+			'DESIGN'
+		).set_label("Design Squad").add_to_container()
+		SquadRolesRow2.add_button(
+			hikari.ButtonStyle.SECONDARY,
+			'PHILOSOPHY'
+		).set_label("Philosphy Squad").add_to_container()
+
+		await ctx.message.delete()
+		await ctx.respond(f"Select the squads you are interested in from this menu.", components = [SquadRolesRow, SquadRolesRow2])
 
 	@lightbulb.listener(hikari.InteractionCreateEvent)
 	async def on_button_press(self, event : hikari.InteractionCreateEvent):
