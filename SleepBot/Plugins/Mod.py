@@ -13,6 +13,7 @@ from lightbulb import checks, slash_commands
 from lightbulb.command_handler import Bot
 from __init__ import GUILD_ID
 from datetime import datetime as dt
+from typing import Optional
 
 MAX_MESSAGE_BULK_DELETE = datetime.timedelta(weeks = 2)
 
@@ -115,21 +116,15 @@ class All(slash_commands.SlashSubCommand):
 	enabled_guilds : typing.Optional[typing.Iterable[int]] = (GUILD_ID,)
 
 	count : int = Option("Number of Messages to delete", required = True)
+
+	user : Optional[hikari.User] = Option("User to delete messages of", required = False, default = None)
 	
 	checks = [lightbulb.has_guild_permissions(hikari.Permissions.MANAGE_MESSAGES)]
-	"""
-	options : list[hikari.CommandOption] = [
-		hikari.CommandOption(
-			name = "count",
-			description = "Number of messages to delete",
-			type = hikari.OptionType.INTEGER,
-			is_required = True
-		),
-	]
-	"""
 
 	async def callback(self, context: slash_commands.SlashCommandContext) -> None:
 		count = context.options.count
+
+		user = context.options.user
 
 		if count <= 0 or count > 100 :
 			return await context.respond("Count must be more than 0 and less than 100.")
@@ -141,14 +136,32 @@ class All(slash_commands.SlashSubCommand):
 		).filter(lambda message: now - message.created_at.astimezone(tz = pytz.timezone("UTC")) < MAX_MESSAGE_BULK_DELETE)
 		
 		iterator = iterator.limit(count)
-			
-		iterator = iterator.map(lambda x: x.id).chunk(100)
 
-		try:
+		msgList = []
+
+		if user is not None:
+			savecount = count
+			deleted = 0
 			async for messages in iterator:
-				await context.bot.rest.delete_messages(context.channel_id, messages)
-		except NotFoundError:
-			pass
+				if savecount <= 0:
+					break
+				if messages.author.id == user:
+					msgList.append(messages.id)
+					savecount -= 1
+					deleted += 1
+
+		if not msgList:
+			iterator = iterator.map(lambda x: x.id).chunk(100)
+			try:
+				async for messages in iterator:
+					await context.bot.rest.delete_messages(context.channel_id, messages)
+			except NotFoundError:
+				pass
+		else:
+			try:
+				await self.bot.rest.delete_messages(context.channel_id, msgList)
+			except NotFoundError:
+				pass
 			
 		await context.respond(f"Deleted Messages.")
 		await asyncio.sleep(5)
@@ -165,7 +178,6 @@ class Emotes(slash_commands.SlashSubCommand):
 	count : int = Option("Number of Emojis to delete", required = True)
 
 	checks = [lightbulb.has_guild_permissions(hikari.Permissions.MANAGE_MESSAGES)]
-	#checks = [lightbulb.has_guild_permissions(hikari.Permissions.MANAGE_MESSAGES)]
 
 	async def callback(self, context: slash_commands.SlashCommandContext) -> None:
 		count = context.options.count
@@ -209,7 +221,6 @@ class Emotes(slash_commands.SlashSubCommand):
 		)
 		await asyncio.sleep(5)
 		await context.delete_response()
-
 
 def load(bot : Bot):
 	bot.add_plugin(Mod(bot))

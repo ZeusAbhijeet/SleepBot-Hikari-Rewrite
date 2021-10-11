@@ -1,13 +1,16 @@
 from os import name
 from hikari.interactions.component_interactions import ComponentInteraction
 import hikari
-from hikari.messages import ButtonStyle
+from hikari import ButtonStyle
 import lightbulb
 import random
 import sqlite3
 
 from lightbulb.command_handler import Bot
 from hikari import Permissions
+
+# TODO
+# Change the role menu wordings
 
 class Roles(lightbulb.Plugin):
 	def __init__(self, bot : Bot) -> None:
@@ -20,36 +23,36 @@ class Roles(lightbulb.Plugin):
 		ClubRolesRow = self.bot.rest.build_action_row()
 		ClubRolesRow2 = self.bot.rest.build_action_row()
 		ClubRolesRow.add_button(
-			hikari.ButtonStyle.PRIMARY,
+			ButtonStyle.PRIMARY,
 			f"BOOKCLUB"
 		).set_label("Book Club").add_to_container()
 		ClubRolesRow.add_button(
-			hikari.ButtonStyle.PRIMARY,
+			ButtonStyle.PRIMARY,
 			f"MOVIECLUB"
 		).set_label("Movie Club").add_to_container()
 		ClubRolesRow.add_button(
-			hikari.ButtonStyle.PRIMARY,
+			ButtonStyle.PRIMARY,
 			f"CPCLUB"
 		).set_label("CP Club").add_to_container()
 		ClubRolesRow.add_button(
-			hikari.ButtonStyle.PRIMARY,
+			ButtonStyle.PRIMARY,
 			f"OPENSAUCECLUB"
 		).set_label("Open Sauce Club").add_to_container()
 
 		ClubRolesRow2.add_button(
-			hikari.ButtonStyle.SECONDARY,
+			ButtonStyle.SECONDARY,
 			f"BOCLUB"
 		).set_label("BO Club").add_to_container()
 		ClubRolesRow2.add_button(
-			hikari.ButtonStyle.SECONDARY,
+			ButtonStyle.SECONDARY,
 			f"OPENMICCLUB"
 		).set_label("Open Mic Club").add_to_container()
 		ClubRolesRow2.add_button(
-			hikari.ButtonStyle.SECONDARY,
+			ButtonStyle.SECONDARY,
 			f"QUIZCLUB"
 		).set_label("Quiz Club").add_to_container()
 		ClubRolesRow2.add_button(
-			hikari.ButtonStyle.SECONDARY,
+			ButtonStyle.SECONDARY,
 			f"STUDYCLUB"
 		).set_label("Study Buddies").add_to_container()
 		await ctx.message.delete()
@@ -60,23 +63,23 @@ class Roles(lightbulb.Plugin):
 	async def colour_role_menu(self, ctx : lightbulb.Context) -> None:
 		ColourRolesRow = self.bot.rest.build_action_row()
 		ColourRolesRow.add_button(
-			hikari.ButtonStyle.PRIMARY,
+			ButtonStyle.PRIMARY,
 			f"COLOUR_RED"
 		).set_label("Red").add_to_container()
 		ColourRolesRow.add_button(
-			hikari.ButtonStyle.PRIMARY,
+			ButtonStyle.PRIMARY,
 			f"COLOUR_YELLOW"
 		).set_label("Yellow").add_to_container()
 		ColourRolesRow.add_button(
-			hikari.ButtonStyle.PRIMARY,
+			ButtonStyle.PRIMARY,
 			f"COLOUR_ORANGE"
 		).set_label("Orange").add_to_container()
 		ColourRolesRow.add_button(
-			hikari.ButtonStyle.PRIMARY,
+			ButtonStyle.PRIMARY,
 			f"COLOUR_GREEN"
 		).set_label("Green").add_to_container()
 		ColourRolesRow.add_button(
-			hikari.ButtonStyle.PRIMARY,
+			ButtonStyle.PRIMARY,
 			f"COLOUR_BLUE"
 		).set_label("Blue").add_to_container()
 
@@ -89,33 +92,53 @@ class Roles(lightbulb.Plugin):
 		SquadRolesRow = self.bot.rest.build_action_row()
 		SquadRolesRow2 = self.bot.rest.build_action_row()
 		SquadRolesRow.add_button(
-			hikari.ButtonStyle.PRIMARY,
+			ButtonStyle.PRIMARY,
 			'ASTRONOMY'
 		).set_label("Astronomy Squad").add_to_container()
 		SquadRolesRow.add_button(
-			hikari.ButtonStyle.PRIMARY,
+			ButtonStyle.PRIMARY,
 			'FINANCE'
 		).set_label("Finance Squad").add_to_container()
 		SquadRolesRow.add_button(
-			hikari.ButtonStyle.PRIMARY,
+			ButtonStyle.PRIMARY,
 			'CODING'
 		).set_label("Coding Squad").add_to_container()
 		
 		SquadRolesRow2.add_button(
-			hikari.ButtonStyle.SECONDARY,
+			ButtonStyle.SECONDARY,
 			'ANIME'
 		).set_label("Anime Squad").add_to_container()
 		SquadRolesRow2.add_button(
-			hikari.ButtonStyle.SECONDARY,
+			ButtonStyle.SECONDARY,
 			'DESIGN'
 		).set_label("Design Squad").add_to_container()
 		SquadRolesRow2.add_button(
-			hikari.ButtonStyle.SECONDARY,
+			ButtonStyle.SECONDARY,
 			'PHILOSOPHY'
 		).set_label("Philosphy Squad").add_to_container()
 
 		await ctx.message.delete()
 		await ctx.respond(f"Select the squads you are interested in from this menu.", components = [SquadRolesRow, SquadRolesRow2])
+	
+	@lightbulb.check(lightbulb.has_guild_permissions(Permissions.MANAGE_ROLES))
+	@lightbulb.command(name = 'announcement_role_menu', aliases = ['announcementrolemenu', 'announcementrm'])
+	async def announcement_role_menu(self, ctx : lightbulb.Context) -> None:
+		RolesRow = self.bot.rest.build_action_row()
+		RolesRow.add_button(
+			ButtonStyle.PRIMARY,
+			'COMMUNITY'
+		).set_label('Community Event Announcements').add_to_container()
+		RolesRow.add_button(
+			ButtonStyle.PRIMARY,
+			'TALKS'
+		).set_label('Talks/Fireside Chat Events').add_to_container()
+		RolesRow.add_button(
+			ButtonStyle.PRIMARY,
+			'SERVER'
+		).set_label('Server Announcement Pings').add_to_container()
+
+		await ctx.message.delete()
+		await ctx.respond(f"Select the Announcements you would like to get notified for from below.", component = RolesRow)
 
 	@lightbulb.listener(hikari.InteractionCreateEvent)
 	async def on_button_press(self, event : hikari.InteractionCreateEvent):

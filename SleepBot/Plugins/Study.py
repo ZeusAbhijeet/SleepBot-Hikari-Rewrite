@@ -9,7 +9,7 @@ from lightbulb.converters import Greedy
 import Utils
 from lightbulb.command_handler import Bot
 from typing import List
-from Utils import StudyBuddiesRoleID
+from Utils import StudyBuddiesRoleID, StaffRoleID
 
 class Study(lightbulb.Plugin):
 	def __init__(self, bot : Bot) -> None:
@@ -71,6 +71,8 @@ class Study(lightbulb.Plugin):
 	@lightbulb.plugins.listener(hikari.GuildMessageCreateEvent)
 	async def on_message_create(self, event : hikari.GuildMessageCreateEvent):
 		if event.author.is_bot:
+			return
+		if StaffRoleID in event.get_member().role_ids:
 			return
 		mention : List[User] = event.message.mentions.users
 		for m in mention:

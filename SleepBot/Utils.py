@@ -29,9 +29,11 @@ DB_POINT = c.fetchall()
 
 c.execute("SELECT role_ID FROM role_table WHERE title = 'STUDYBUDDIES';")
 STUDYBUDDIES = c.fetchone()
+c.execute("SELECT role_ID FROM role_table WHERE title = 'STAFF';")
+STAFF = c.fetchone()
 
 StudyBuddiesRoleID : int = int(STUDYBUDDIES[0])
-
+StaffRoleID : int = int(STAFF[0])
 LOGCHANNELID : int = int(LOGCHANNELID[0])
 POINTCMDCHANNELID = int(POINTCMDCHANNELID[0])
 RULECHANNELID = int(RULECHANNELID[0])

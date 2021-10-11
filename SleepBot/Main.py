@@ -24,8 +24,8 @@ bot = lightbulb.Bot(
 
 @bot.listen(hikari.ShardReadyEvent)
 async def ready_listener(event: hikari.ShardReadyEvent):
-	extensions = ['Meta', 'Fun', 'Mod', 'Study', 'Welcome', 'Handler', 'Astronomy', 'Roles', 'Rules']
 	"""
+	extensions = ['Meta', 'Fun', 'Mod', 'Study', 'Welcome', 'Handler', 'Astronomy', 'Roles', 'Rules']
 	for ext in extensions:
 		bot.load_extension(f"Plugins.{ext}")
 	"""
@@ -45,7 +45,7 @@ async def ready_listener(event: hikari.ShardReadyEvent):
 @lightbulb.check(lightbulb.has_guild_permissions(hikari.Permissions.ADMINISTRATOR))
 #@lightbulb.checks.has_permissions(hikari.Permissions.ADMINISTRATOR)
 @bot.command(name = 'load')
-async def load_ext(ctx : lightbulb.Context, ext : str | None) -> None:
+async def load_ext(ctx : lightbulb.Context, ext : Optional[str] = None) -> None:
 	"""
 	Loads a plugin that is placed in the Plugins folder.
 	"""
@@ -65,7 +65,7 @@ async def load_ext(ctx : lightbulb.Context, ext : str | None) -> None:
 @lightbulb.check(lightbulb.has_guild_permissions(hikari.Permissions.ADMINISTRATOR))
 #@lightbulb.checks.has_permissions(hikari.Permissions.ADMINISTRATOR)
 @bot.command(name = 'unload')
-async def unload_ext(ctx : lightbulb.Context, ext : str | None) -> None:
+async def unload_ext(ctx : lightbulb.Context, ext : Optional[str] = None) -> None:
 	"""
 	Unloads an already loaded plugin.
 	"""
