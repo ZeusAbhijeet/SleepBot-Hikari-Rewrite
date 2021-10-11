@@ -1,25 +1,29 @@
 import asyncio
 import hikari
-from hikari.guilds import Role
 from hikari.users import User
 import lightbulb
 import random
-import Utils
-from datetime import datetime as dt
-from lightbulb import checks
-from lightbulb.command_handler import Bot
-from typing import Optional, List
+import sqlite3
 
-FocusChannelID = 818131313810079744 #818131313810079744
-StudyBuddiesRoleID = 770667627047682058 #770667627047682058
-StudyCategoryID = 771215519193104404 #771215519193104404
-StudyVCID = 770670934565715998
-LofiStudyVCID = 818011398231687178
+from lightbulb.converters import Greedy
+import Utils
+from lightbulb.command_handler import Bot
+from typing import List
+from Utils import StudyBuddiesRoleID
 
 class Study(lightbulb.Plugin):
 	def __init__(self, bot : Bot) -> None:
 		self.bot = bot
 		super().__init__()
+		conn = sqlite3.connect('Database.db')
+		c = conn.cursor()
+		self.StudyVCIDTuple = c.execute(f"SELECT channel_ID FROM channel_table WHERE title = 'STUDYVC';").fetchall()
+		self.FocusChannelID = c.execute(f"SELECT channel_ID FROM channel_table WHERE title = 'FOCUS';").fetchone()
+		self.FocusChannelID = self.FocusChannelID[0]
+		self.StudyVCIDs = []
+		for id in self.StudyVCIDTuple:
+			self.StudyVCIDs.append(id[0])
+		conn.close()
 	
 	def StudyVCJoinMessage(self, member : hikari.Member, NoOfRoles):
 		StudyVCEmbed = hikari.Embed(
@@ -39,34 +43,30 @@ class Study(lightbulb.Plugin):
 	@lightbulb.check(Utils.is_study_channel)
 	@lightbulb.cooldown(7200, 1, lightbulb.ChannelBucket)
 	@lightbulb.command(name="study_buddies", aliases = ['sb', 'studybuddies', 'studybuddy'])
-	async def study_buddies_command(self, ctx : lightbulb.Context, *, msg : str = None) -> None:
+	async def study_buddies_command(self, ctx : lightbulb.Context, msg : Greedy[str]) -> None:
 		"""
 		Ping the Study Buddies role to invite people to study with you
 		"""
 		StudyBuddyRole = ctx.get_guild().get_role(StudyBuddiesRoleID)
-
+		if not msg:
+			msg = None
+		else:
+			message = " ".join(msg)
 		await ctx.respond(
-			f"{StudyBuddyRole.mention}", 
-			embed = hikari.Embed(
-				description = f"{ctx.author.mention} wants to study with y'all!\nHere's the reason they pinged: **{msg}**" if msg is not None else f"{ctx.author.mention} wants to study with y'all!",
-				color = random.randint(0, 0xFFFFFF)
-			).set_author(
-				name = f"{self.bot.get_me().username}",
-				icon = self.bot.get_me().avatar_url
-			),
+			f"Hey {StudyBuddyRole.mention}!\n{ctx.author.mention} wants to study with y'all\nHere's the reason they pinged: **{message}**" if msg is not None else f"Hey {StudyBuddyRole.mention}!\n{ctx.author.mention} wants to study with y'all!",
 			role_mentions = True
 		)
 
 	@lightbulb.plugins.listener(hikari.VoiceStateUpdateEvent)
 	async def on_voice_state_update(self, event : hikari.VoiceStateUpdateEvent) -> None:
-		if event.old_state is None and event.state is not None and (event.state.channel_id == StudyVCID or event.state.channel_id == LofiStudyVCID):
+		if event.old_state is None and event.state is not None and (event.state.channel_id in self.StudyVCIDs):
 			UserRoles = len(event.state.member.get_roles())
-			await self.bot.rest.create_message(FocusChannelID, f"{event.state.member.mention}", embed = self.StudyVCJoinMessage(event.state.member, UserRoles), user_mentions = True)
-		elif event.old_state is not None and event.state is not None and (event.state.channel_id == StudyVCID or event.state.channel_id == LofiStudyVCID):
-			if event.old_state.channel_id == StudyVCID or event.old_state.channel_id == LofiStudyVCID:
+			await self.bot.rest.create_message(self.FocusChannelID, f"{event.state.member.mention}", embed = self.StudyVCJoinMessage(event.state.member, UserRoles), user_mentions = True)
+		elif event.old_state is not None and event.state is not None and (event.state.channel_id in self.StudyVCIDs):
+			if event.old_state.channel_id in self.StudyVCIDs:
 				return
 			UserRoles = len(event.state.member.get_roles())
-			await self.bot.rest.create_message(FocusChannelID, f"{event.state.member.mention}", embed = self.StudyVCJoinMessage(event.state.member, UserRoles), user_mentions = True)
+			await self.bot.rest.create_message(self.FocusChannelID, f"{event.state.member.mention}", embed = self.StudyVCJoinMessage(event.state.member, UserRoles), user_mentions = True)
 	
 	@lightbulb.plugins.listener(hikari.GuildMessageCreateEvent)
 	async def on_message_create(self, event : hikari.GuildMessageCreateEvent):
@@ -79,21 +79,13 @@ class Study(lightbulb.Plugin):
 				return
 			elif mentioneduser.id == event.author_id:
 				return
-			#MemberBoi = await self.bot.rest.fetch_member(event.guild_id, mentioneduser)
 			roles = mentioneduser.get_roles()
 			for r in roles:
 				if r.name == "Studying/Working":
 					msg = await self.bot.rest.create_message(
 						event.channel_id, 
-						content = f"{event.message.author.mention}",
-						embed = hikari.Embed(
-							description = f"Don't ping {mentioneduser.mention}. They are currently Studying/Working",
-							color = random.randint(0, 0xffffff)
-						).set_author(
-							name = f"{event.message.author.username}",
-							icon = event.message.author.avatar_url
-						),
-						user_mentions = True
+						content = f"Hey {event.message.author.mention}, don't disturb {mentioneduser.mention}. They are currently focusing!",
+						user_mentions = False
 					)
 					await asyncio.sleep(10)
 					await msg.delete()

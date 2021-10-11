@@ -27,6 +27,11 @@ POINT_EARN_CHNLS = c.fetchall()
 c.execute("SELECT user_id, points FROM point_table;")
 DB_POINT = c.fetchall()
 
+c.execute("SELECT role_ID FROM role_table WHERE title = 'STUDYBUDDIES';")
+STUDYBUDDIES = c.fetchone()
+
+StudyBuddiesRoleID : int = int(STUDYBUDDIES[0])
+
 LOGCHANNELID : int = int(LOGCHANNELID[0])
 POINTCMDCHANNELID = int(POINTCMDCHANNELID[0])
 RULECHANNELID = int(RULECHANNELID[0])
