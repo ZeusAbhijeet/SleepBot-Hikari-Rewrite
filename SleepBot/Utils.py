@@ -11,8 +11,6 @@ from pytz import timezone as tz
 with open("./Secrets/token") as f:
 	token = f.read().strip()
 
-POINT = {}
-
 conn = sqlite3.connect('Database.db')
 c = conn.cursor()
 
@@ -24,25 +22,30 @@ c.execute("SELECT channel_ID FROM channel_table WHERE title='RULE';")
 RULECHANNELID = c.fetchone()
 c.execute("SELECT channel_ID FROM channel_table WHERE title='POINT-EARN-CHANNEL';")
 POINT_EARN_CHNLS = c.fetchall()
-c.execute("SELECT user_id, points FROM point_table;")
-DB_POINT = c.fetchall()
+c.execute("SELECT channel_ID FROM channel_table WHERE title='NONLEVELCHANNEL';")
+NOXPCHANNEL = c.fetchall()
 
 c.execute("SELECT role_ID FROM role_table WHERE title = 'STUDYBUDDIES';")
 STUDYBUDDIES = c.fetchone()
 c.execute("SELECT role_ID FROM role_table WHERE title = 'STAFF';")
 STAFF = c.fetchone()
+c.execute("SELECT role_ID FROM role_table WHERE title = 'XPMUTED'")
+XPMUTED = c.fetchone()
 
 StudyBuddiesRoleID : int = int(STUDYBUDDIES[0])
 StaffRoleID : int = int(STAFF[0])
 LOGCHANNELID : int = int(LOGCHANNELID[0])
+XPMUTEDROLEID : int = int(XPMUTED[0])
+
 POINTCMDCHANNELID = int(POINTCMDCHANNELID[0])
 RULECHANNELID = int(RULECHANNELID[0])
 STUDYTOGETHERCHANNELID = int(770940461337804810)
 
+
 conn.close()
 
-def loading_embed() -> hikari.Embed:
-	loading_embed = hikari.Embed(description = "Loading...")
+def loading_embed(loading_text : str = None) -> hikari.Embed:
+	loading_embed = hikari.Embed(description = "Loading..." if loading_text is None else loading_text)
 	return loading_embed
 
 # Custom check to see if the command is run in the Point command channel
@@ -84,79 +87,3 @@ async def command_log(bot : lightbulb.Bot, ctx : lightbulb.Context, cmdName : st
 	)
 
 	await bot.rest.create_message(LOGCHANNELID, embed = LogEmbed)
-
-"""
-async def Backup(bot : Bot):
-	global POINT
-	global DB_POINT
-	while bot.is_alive:
-		await bot.rest.create_message(int(LOGCHANNELID), f"Backup OK: ```{datetime.now()}```")
-		await asyncio.sleep(300)
-		conn = sqlite3.connect('Database.db')
-		c = conn.cursor()
-
-		c.execute("SELECT user_id, points FROM point_table;")
-		DB_POINT = c.fetchall()
-
-		await bot.rest.create_message(int(LOGCHANNELID), f"Performing Backup: ```{datetime.now()}```")
-
-		for user in DB_POINT:
-			if user[0] in POINT:
-				c.execute("UPDATE point_table SET points = {} WHERE user_id = {}".format(POINT[user[0]] + user[1], user[0]))
-		is_instance = False
-		for user in POINT:
-			for elm in DB_POINT:
-				if user in elm:
-					is_instance = True
-					break
-				if not is_instance:
-					c.execute("INSERT INTO point_table VALUES (NULL, {}, {});".format(user, POINT[user]))
-				is_instance = False
-		
-		c.execute("SELECT user_ID, points FROM point_table;")
-		DB_POINT = c.fetchall()
-
-		conn.commit()
-		conn.close()
-
-		POINT = {}
-
-
-This one is the old one btw
-async def Backup(client):
-	await client.wait_until_ready()
-	global POINT
-	global DB_POINT
-	while not client.is_closed():
-		await client.get_channel(LOGCHANNELID).send(f"Backup OK: ```{datetime.now()}```")
-		# Repeat every 1 hour
-		await asyncio.sleep(1800)
-		conn = sqlite3.connect('Database.db')
-		c = conn.cursor()
-
-		c.execute("SELECT user_id, points FROM point_table;")
-		DB_POINT = c.fetchall()
-
-		await client.get_channel(int(LOGCHANNELID)).send(f"Performing Backup: ```{datetime.now()}```")
-		# POINT BACKUP
-		for user in DB_POINT:
-			if user[0] in POINT:
-				c.execute("UPDATE point_table SET points = {} WHERE user_ID = {}".format(POINT[user[0]]+user[1],user[0]))
-		is_instance = False
-		for user in POINT:
-			for elm in DB_POINT:
-				if user in elm:
-					is_instance = True
-					break
-			if not is_instance:
-				c.execute("INSERT INTO point_table VALUES (NULL, {}, {});".format(user,POINT[user]))
-			is_instance = False
-		
-		c.execute("SELECT user_ID, points FROM point_table;")
-		DB_POINT = c.fetchall()
-
-		conn.commit()
-		conn.close()
-
-		POINT = {}
-"""

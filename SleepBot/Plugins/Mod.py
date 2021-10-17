@@ -134,6 +134,8 @@ class All(slash_commands.SlashSubCommand):
 		iterator = context.bot.rest.fetch_messages(
 			context.channel_id
 		).filter(lambda message: now - message.created_at.astimezone(tz = pytz.timezone("UTC")) < MAX_MESSAGE_BULK_DELETE)
+
+		await context.respond(response_type = hikari.ResponseType.DEFERRED_MESSAGE_CREATE)
 		
 		iterator = iterator.limit(count)
 
@@ -163,7 +165,7 @@ class All(slash_commands.SlashSubCommand):
 			except NotFoundError:
 				pass
 			
-		await context.respond(f"Deleted Messages.")
+		await context.edit_response(f"Deleted Messages.")
 		await asyncio.sleep(5)
 		await context.delete_response()
 

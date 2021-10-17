@@ -28,6 +28,7 @@ class Rules(lightbulb.Plugin):
 		conn = sqlite3.connect('Database.db')
 		c = conn.cursor()
 		rule = c.execute("SELECT * FROM rule_table WHERE db_ID = {}".format(rule_id)).fetchone()
+		print(rule)
 		conn.close()
 		await msg.edit(
 			embed = hikari.Embed(
