@@ -12,4 +12,4 @@ Coming Soon.
 
 ## Licence
 
- This project is licenced under [GPL v3](https://github.com/ZeusAbhijeet/Hikari-Testing-Bot/blob/main/LICENCE)
+ This project is licenced under [GPL v3](https://github.com/ZeusAbhijeet/SleepBot-Hikari-Rewrite/blob/main/LICENSE)
