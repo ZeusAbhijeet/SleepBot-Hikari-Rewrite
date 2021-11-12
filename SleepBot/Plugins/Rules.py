@@ -69,8 +69,9 @@ class Rule_lookup(slash_commands.SlashCommand):
 	
 def load(bot : Bot) -> None:
 	bot.add_plugin(Rules(Bot))
-	bot.add_slash_command(Rule_lookup, create = True)
+	bot.autodiscover_slash_commands(create = True)
 	print("Plugin Rules has been loaded")
 
 def unload(bot : Bot) -> None:
 	bot.remove_plugin("Rules")
+	bot.remove_slash_command("Rule_lookup")

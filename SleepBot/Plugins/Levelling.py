@@ -47,7 +47,7 @@ class Levelling(lightbulb.Plugin):
 		conn.close()
 		super().__init__()
 	
-	@lightbulb.command(name = "rankcard", aliases = ['rank'])
+	@lightbulb.command(name = "rankcard", aliases = ['rank', 'level'])
 	async def rankcard(self, ctx : lightbulb.Context, member : hikari.Member = None):
 		"Shows your activity level, xp and rank."
 		if member is None:
@@ -74,29 +74,60 @@ class Levelling(lightbulb.Plugin):
 			lvl += 1
 		xp -= ((300 / 2 * (lvl - 1) ** 2) + (300 / 2 * (lvl - 1)))
 
-		#rankings = c.execute(f"SELECT user_ID, xp FROM level_table;").fetchall()
 		rankings = levelling.find().sort("xp", -1)
 		for x in rankings:
 			rank += 1
 			if MemberData['user_ID'] == x['user_ID']:
 				break
-
-		card = await vac_api.rank_card(
-			username = member,
-			avatar = member.avatar_url,
-			level = lvl,
-			rank = rank,
-			current_xp = xp,
-			next_level_xp = int(300 * 2 * ((1 / 2) * lvl)),
-			previous_level_xp = 0,
-			circle_avatar = False,
-			custom_background = MemberData['background'],
-			xp_color = f"#{MemberData['xp_colour']}",
-			is_boosting = (True if member.premium_since is not None else False)
-		)
-		rankcard = await card.read(bytesio=False)
-		#await msg.delete()
-		await msg.edit(content = "", attachment = Bytes(rankcard, "rank_card.png"))
+		
+		try:	
+			card = await vac_api.rank_card(
+				username = member,
+				avatar = member.avatar_url if member.avatar_url else member.default_avatar_url,
+				level = lvl,
+				rank = rank,
+				current_xp = xp,
+				next_level_xp = int(300 * 2 * ((1 / 2) * lvl)),
+				previous_level_xp = 0,
+				circle_avatar = False,
+				custom_background = MemberData['background'],
+				xp_color = f"#{MemberData['xp_colour']}",
+				is_boosting = (True if member.premium_since is not None else False)
+			)
+			rankcard = await card.read(bytesio=False)
+			await msg.edit(content = "", attachment = Bytes(rankcard, "rank_card.png"))
+		except:
+			footer_messages = [
+				'It is what it is.',
+				'Improvise. Adapt. Overcome.',
+				'No. I don\'t know when rankcard will work again. Pray to Internet Gods maybe?',
+				'Never Gonna Give You Up.',
+				'Deal with it.',
+				'API probably ain\'t in a mood rn sorry bout that.',
+				'The API you are trying to reach is busy trying not to deal with your details.',
+				'Brb sending your data to Facebook to turn it into Metadata. Get it?'
+			]
+			await msg.edit(
+				content = "Failed to generate rank card. VAC Efron API may be down? Here is your level info in a less fancy way for now tho.",
+				embed = hikari.Embed(
+					title = f"{member.display_name}'s Level Details",
+					description = f"<:pepega:759717484352765973>",
+					colour = MemberData['xp_colour']
+				).set_footer(
+					text = f"{random.choice(footer_messages)}"
+				).add_field(
+					name = "Level :", value = f"{lvl}", inline = True
+				).add_field(
+					name = "Rank :", value = f"{rank}", inline = True
+				).add_field(
+					name = "Current XP :", value = f"{int(xp)}", inline = True
+				).add_field(
+					name = "XP Required to Level up :", value = f"{int(300 * 2 * ((1 / 2) * lvl))}", inline = True
+				).set_thumbnail(
+					member.avatar_url if member.avatar_url else member.default_avatar_url
+				)
+			)
+			
 	
 	@lightbulb.command(name = 'ranklb', aliases = ['levellb'])
 	async def ranklb(self, ctx : lightbulb.Context):
@@ -114,6 +145,8 @@ class Levelling(lightbulb.Plugin):
 				break
 			try:
 				member = ctx.get_guild().get_member(r['user_ID'])
+				if not member:
+					continue
 			except:
 				continue
 			if member.is_bot:
@@ -200,7 +233,6 @@ class Levelling(lightbulb.Plugin):
 			}
 		)
 		if MemberData:
-			Existing_colour = MemberData['xp_colour']
 			if hex is None:
 				levelling.update_one(
 					{
@@ -333,6 +365,8 @@ class Levelling(lightbulb.Plugin):
 					LevelRoleID = c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL80';").fetchone()
 				elif Afterlvl >= 100:
 					LevelRoleID = c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL100';").fetchone()
+				else:
+					LevelRoleID = None
 
 				if LevelRoleID:
 					await member.add_role(role = LevelRoleID[0], reason = "Level Up Reward")
@@ -396,22 +430,54 @@ class Level(slash_commands.SlashCommand):
 			rank += 1
 			if MemberData['user_ID'] == x['user_ID']:
 				break
-
-		card = await vac_api.rank_card(
-			username = member,
-			avatar = member.avatar_url,
-			level = lvl,
-			rank = rank,
-			current_xp = xp,
-			next_level_xp = int(300 * 2 * ((1 / 2) * lvl)),
-			previous_level_xp = 0,
-			circle_avatar = False,
-			custom_background = MemberData['background'],
-			xp_color = f"#{MemberData['xp_colour']}",
-			is_boosting = (True if member.premium_since is not None else False)
-		)
-		rankcard = await card.read(bytesio=False)
-		await ctx.edit_response(attachment = Bytes(rankcard, "rank_card.png"))
+		
+		try:
+			card = await vac_api.rank_card(
+				username = member,
+				avatar = member.avatar_url if member.avatar_url else member.default_avatar_url,
+				level = lvl,
+				rank = rank,
+				current_xp = xp,
+				next_level_xp = int(300 * 2 * ((1 / 2) * lvl)),
+				previous_level_xp = 0,
+				circle_avatar = False,
+				custom_background = MemberData['background'],
+				xp_color = f"#{MemberData['xp_colour']}",
+				is_boosting = (True if member.premium_since is not None else False)
+			)
+			rankcard = await card.read(bytesio=False)
+			await ctx.edit_response(attachment = Bytes(rankcard, "rank_card.png"))
+		except:
+			footer_messages = [
+				'It is what it is.',
+				'Improvise. Adapt. Overcome.',
+				'No. I don\'t know when rankcard will work again. Pray to Internet Gods maybe?',
+				'Never Gonna Give You Up.',
+				'Deal with it.',
+				'API probably ain\'t in a mood rn sorry bout that.',
+				'The API you are trying to reach is busy trying not to deal with your details.',
+				'Brb sending your data to Facebook to turn it into Metadata. Get it?'
+			]
+			await ctx.edit_response(
+				content = "Failed to generate rank card. VAC Efron API may be down? Here is your level info in a less fancy way for now tho.",
+				embed = hikari.Embed(
+					title = f"{member.display_name}'s Level Details",
+					description = f"<:pepega:759717484352765973>",
+					colour = MemberData['xp_colour']
+				).set_footer(
+					text = f"{random.choice(footer_messages)}"
+				).add_field(
+					name = "Level :", value = f"{lvl}", inline = True
+				).add_field(
+					name = "Rank :", value = f"{rank}", inline = True
+				).add_field(
+					name = "Current XP :", value = f"{int(xp)}", inline = True
+				).add_field(
+					name = "XP Required to Level up :", value = f"{int(300 * 2 * ((1 / 2) * lvl))}", inline = True
+				).set_thumbnail(
+					member.avatar_url if member.avatar_url else member.default_avatar_url
+				)
+			)
 
 class Level_Leaderboard(slash_commands.SlashCommand):
 	description = "Shows the top 12 members of the server"
@@ -434,6 +500,8 @@ class Level_Leaderboard(slash_commands.SlashCommand):
 				break
 			try:
 				member = ctx.get_guild().get_member(r['user_ID'])
+				if not member:
+					continue
 			except:
 				continue
 			if member.is_bot:
@@ -456,10 +524,10 @@ class Level_Leaderboard(slash_commands.SlashCommand):
 
 def load(bot : Bot) -> None:
 	bot.add_plugin(Levelling(bot))
-	bot.add_slash_command(Level, create = True)
-	bot.add_slash_command(Level_Leaderboard, create = True)
+	bot.autodiscover_slash_commands(create = True)
 	print("Plugin Levelling has been loaded")
 
 def unload(bot : Bot) -> None:
 	bot.remove_plugin("Levelling")
-
+	bot.remove_slash_command("Level")
+	bot.remove_slash_command("Level_Leaderboard")

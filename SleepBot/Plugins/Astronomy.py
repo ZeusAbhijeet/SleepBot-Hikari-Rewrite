@@ -69,7 +69,7 @@ class Astronomy_Pic(slash_commands.SlashCommand):
 
 def load(bot : Bot) -> None:
 	bot.add_plugin(Astronomy(bot))
-	bot.add_slash_command(Astronomy_Pic, create = True)
+	bot.autodiscover_slash_commands(create = True)
 	print("Plugin Astronomy has been loaded")
 
 def unload(bot : Bot) -> None:

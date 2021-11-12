@@ -226,7 +226,7 @@ class Emotes(slash_commands.SlashSubCommand):
 
 def load(bot : Bot):
 	bot.add_plugin(Mod(bot))
-	bot.add_slash_command(Clear, create = True)
+	bot.autodiscover_slash_commands(create = True)
 	print("Plugin Mod has been loaded")
 
 def unload(bot : Bot):

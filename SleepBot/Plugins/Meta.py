@@ -241,9 +241,7 @@ class Avatar(slash_commands.SlashCommand):
 
 def load(bot : Bot):
 	bot.add_plugin(Meta(bot))
-	bot.add_slash_command(About, create = True)
-	bot.add_slash_command(Ping, create = True)
-	bot.add_slash_command(Avatar, create = True)
+	bot.autodiscover_slash_commands(create = True)
 	print(f"Plugin Meta has been loaded")
 
 def unload(bot : Bot):

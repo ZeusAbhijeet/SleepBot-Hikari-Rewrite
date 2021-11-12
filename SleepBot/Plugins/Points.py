@@ -41,6 +41,7 @@ class Points(lightbulb.Plugin):
 		conn.close()
 		await ctx.respond(f"Gave {target.mention} {amount} coins.", user_mentions = False)	
 
+	@lightbulb.check_exempt(Utils.is_bot_owner)
 	@lightbulb.check(Utils.is_point_cmd_chnl)
 	@lightbulb.command(name = "coins", aliases = ["coin"])
 	async def coins(self, ctx : lightbulb.Context, target : Optional[hikari.Member] = None) -> None:
@@ -67,7 +68,8 @@ class Points(lightbulb.Plugin):
 		await msg.edit(embed = embed)
 		return
 	
-	
+	@lightbulb.check_exempt(Utils.is_bot_owner)
+	@lightbulb.check(Utils.is_point_cmd_chnl)
 	@lightbulb.command(name = 'top', aliases = ['leaderboard', 'all_coins', 'lb'])
 	async def top_command(self, ctx : lightbulb.Context) -> None:
 		await Utils.command_log(self.bot, ctx, "top")
@@ -156,12 +158,12 @@ class Coins(slash_commands.SlashCommand):
 		
 		embed = hikari.Embed(
 			title = f"User {target.display_name}'s Coins",
-			description = f"{target.display_name} has {target_coins} since reset.",
+			description = f"{target.display_name} has {target_coins} coins since reset.",
 			colour = random.randint(0, 0xffffff)
 		)
 		await ctx.edit_response(embed = embed)
 
-class Leaderboard(slash_commands.SlashCommand):
+class Coins_Leaderboard(slash_commands.SlashCommand):
 	description = "See the Coins leaderboard with top 20 members."
 
 	enabled_guilds : Optional[Iterable[int]] = (GUILD_ID,)
@@ -203,9 +205,10 @@ class Leaderboard(slash_commands.SlashCommand):
 
 def load(bot : Bot) -> None:
 	bot.add_plugin(Points(bot))
-	bot.add_slash_command(Coins, create=True)
-	bot.add_slash_command(Leaderboard, create=True)
+	bot.autodiscover_slash_commands(create = True)
 	print("Plugin Points has been loaded")
 
 def unload(bot : Bot) -> None:
 	bot.remove_plugin("Points")
+	bot.remove_slash_command("Coins")
+	bot.remove_slash_command("Coins_Leaderboard")
