@@ -20,7 +20,7 @@ class Fun(lightbulb.Plugin):
 			image_url
 		).set_author(
 			name = ctx.author.username,
-			icon = ctx.author.avatar_url
+			icon = ctx.author.avatar_url if ctx.author.avatar_url is not None else ctx.author.default_avatar_url
 		)
 		return FunEmbed
 	# Ban Command
@@ -89,7 +89,7 @@ class Fun(lightbulb.Plugin):
 		await ctx.respond(
 			embed = self.fun_command_embed(
 				ctx,
-				title_string = f"{ctx.author.username} {} just gave a Rose!" if target is None else f"{ctx.author.username} {} just gave a Rose to {target.username} !!",
+				title_string = f"{ctx.author.username} just gave a Rose!" if target is None else f"{ctx.author.username} just gave a Rose to {target.username} !!",
 				description_string = f"Take this rose pls" if reason == "none" else f"Take this rose pls\nReason: {reason}",
 				image_url = "https://res.cloudinary.com/zeusabhijeet/image/upload/v1607091834/SleepBot/Fun%20Commands/gibrose.gif"
 			)
@@ -105,7 +105,7 @@ class Fun(lightbulb.Plugin):
 		await ctx.respond(
 			embed = self.fun_command_embed(
 				ctx,
-				title_string = f"{ctx.author.username} {} {} just slapped everyone!" if target is None else f"{ctx.author.username} {} is slapping {target.username} !!",
+				title_string = f"{ctx.author.username} just slapped everyone!" if target is None else f"{ctx.author.username} is slapping {target.username} !!",
 				description_string = f"Be ready!" if reason == "none" else f"Be Ready!\nReason: {reason}",
 				image_url = "https://res.cloudinary.com/zeusabhijeet/image/upload/v1608491339/SleepBot/Fun%20Commands/slap.gif"
 			)

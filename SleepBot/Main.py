@@ -8,6 +8,7 @@ from pytz import timezone as tz
 from typing import Optional
 import Utils
 import os
+import time
 
 if os.name != "nt":
 	import uvloop
@@ -31,13 +32,14 @@ async def ready_listener(event: hikari.ShardReadyEvent):
 	"""
 	bot.load_extensions_from("./Plugins")
 	await bot.update_presence(
-				status = hikari.Status.ONLINE,
-				activity = hikari.Activity(
-						name = f"?help | v{__version__}", 
-						type = hikari.ActivityType.LISTENING
-				)
+		status = hikari.Status.ONLINE,
+		activity = hikari.Activity(
+				name = f"?help | v{__version__}", 
+				type = hikari.ActivityType.LISTENING
+		)
 	)
-	await bot.rest.create_message(Utils.LOGCHANNELID, f"Bot is online at time {datetime.now().astimezone(tz('Asia/Kolkata')).strftime('%d.%m.%Y - %H:%M:%S')}")
+	#await bot.rest.create_message(Utils.LOGCHANNELID, f"Bot is online at time {datetime.now().astimezone(tz('Asia/Kolkata')).strftime('%d.%m.%Y - %H:%M:%S')}")
+	await bot.rest.create_message(Utils.LOGCHANNELID, f"Bot is online at time <t:{int(time.time())}>")
 	print(f"Bot is ready")
 	#asyncio.create_task(Utils.Backup(bot))
 	
@@ -114,6 +116,9 @@ async def logout_command(ctx : lightbulb.Context) -> None:
 	await ctx.respond(f"Logging out...")
 	await ctx.bot.close()
 
+if __name__ == '__main__':
+	bot.run()
+
 """
 @bot.command(name = 'test')
 async def test(ctx : lightbulb.Context) -> None:
@@ -123,5 +128,3 @@ async def test(ctx : lightbulb.Context) -> None:
 async def ping(ctx):
 	await ctx.respond("Pong!")
 """
-
-bot.run()

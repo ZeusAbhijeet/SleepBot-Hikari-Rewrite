@@ -1,16 +1,14 @@
 import asyncio
 from datetime import datetime
-from os import truncate
 import hikari
 from hikari.users import User
+from hikari.voices import VoiceState
 import lightbulb
 import random
 import sqlite3
 import time
-from lightbulb.events import LightbulbEvent
 from lightbulb.slash_commands.commands import Option
 from pymongo import MongoClient
-import pymongo
 from __init__ import GUILD_ID
 from asyncio import tasks
 from lightbulb.converters import Greedy
@@ -25,7 +23,13 @@ with open("./Secrets/studystreakmongourl") as f:
 cluster = MongoClient(MongoURL)
 membertime = cluster['bluelearn']['membertime']
 
-TIMER_UPDATE_INTERVAL = 1
+TIMER_UPDATE_INTERVAL = 1 # minutes
+KICK_STALKERS_AFTER = 45 # seconds
+
+CAMS_ON_VC = 770670934565715998
+STUDYVC1 = 818011398231687178
+
+STUDYING_ROLE = 816873155246817290
 
 def MinutesToHours(mins : int):
 	hours = int(mins / 60)
@@ -38,10 +42,12 @@ def add_member_to_db(userID : int) -> None:
 			"user_ID" : userID,
 			"total" : 0,
 			"daily" : 0,
+			"yesterday" : 0,
 			"weekly" : 0,
 			"monthly" : 0,
 			"stream" : 0,
-			"video" : 0
+			"video" : 0,
+			"streak" : 0
 		}
 	)
 
@@ -59,6 +65,20 @@ def update_time(userID : int, times = ("total", "daily", "weekly", "monthly")) -
 def reset_daily_times() -> None:
 	memberinfo = membertime.find({})
 	for info in memberinfo:
+		membertime.update_one(
+			{"user_ID" : info["user_ID"]},
+			{'$set' : {"yesterday" : info["daily"]}}
+		)
+		if info["yesterday"] > 0:
+			membertime.update_one(
+				{"user_ID" : info["user_ID"]},
+				{'$inc' : {"streak" : 1}}
+			)
+		else:
+			membertime.update_one(
+				{"user_ID" : info["user_ID"]},
+				{'$set' : {"streak" : 0}}
+			)
 		membertime.update_one(
 			{"user_ID" : info["user_ID"]},
 			{'$set' : {"daily" : 0}}
@@ -95,10 +115,11 @@ class Study(lightbulb.Plugin):
 		conn.close()
 		asyncio.create_task(self.RefreshMemberTimes())
 		asyncio.create_task(self.ResetLeaderboard())
+		asyncio.create_task(self.KickStalkersFromCamsVC())
 	
-	def FetchMembersInChannels(self) -> list:
+	def FetchMembersInChannels(self, channelIDList : list) -> list:
 		VoiceStatesList = []
-		for channelid in self.StudyVCIDs:
+		for channelid in channelIDList:
 			voicestates = self.bot.cache.get_voice_states_view_for_channel(int(GUILD_ID), channelid)
 			if voicestates.values():
 				VoiceStatesList.extend(voicestates.values())
@@ -106,13 +127,15 @@ class Study(lightbulb.Plugin):
 
 	async def GetFocusedMembers(self) -> list:
 		focused = []
-		MemberVoiceStates = self.FetchMembersInChannels()
+		MemberVoiceStates = self.FetchMembersInChannels(self.StudyVCIDs)
 
 		for VoiceState in MemberVoiceStates:
 			CurrentState = "None"
 			if not VoiceState.member.is_bot:
 				if not VoiceState.is_streaming and not VoiceState.is_video_enabled:
 					CurrentState = "NONE"
+				elif VoiceState.is_streaming and VoiceState.is_video_enabled:
+					CurrentState = "BOTH"
 				elif VoiceState.is_streaming:
 					CurrentState = "STREAM"
 				elif VoiceState.is_video_enabled:
@@ -186,13 +209,13 @@ class Study(lightbulb.Plugin):
 			if member.id == ctx.author.id:
 				LeaderboardEmbed.add_field(
 					name = f"-> {rank} : {member}",
-					value = f"{hrs} Hrs {mins} Mins",
+					value = f"{hrs} Hrs {mins} Mins\n**Current Streak :** {memberinfo['streak']}",
 					inline = False
 				)
 			else:
 				LeaderboardEmbed.add_field(
 					name = f"{rank} : {member}",
-					value = f"{hrs} Hrs {mins} Mins",
+					value = f"{hrs} Hrs {mins} Mins\n**Current Streak :** {memberinfo['streak']}",
 					inline = False
 				)
 			
@@ -222,9 +245,9 @@ class Study(lightbulb.Plugin):
 		times = []
 		StatsEmbed = hikari.Embed(
 			title = f"{target.display_name}'s Study Stats",
-			description = f"Stats reset between 12am and 1am",
+			description = f"\n**Current Streak :** {MemberStats['streak']}",
 			colour = random.randint(0, 0xffffff)
-		)
+		).set_footer(text = "Stats reset between 12am and 1am.")
 
 		for mins in (
 			MemberStats["total"],
@@ -274,14 +297,30 @@ class Study(lightbulb.Plugin):
 	@lightbulb.plugins.listener(hikari.VoiceStateUpdateEvent)
 	async def on_voice_state_update(self, event : hikari.VoiceStateUpdateEvent) -> None:
 		if event.old_state is None and event.state is not None and (event.state.channel_id in self.StudyVCIDs):
+			await self.bot.rest.add_role_to_member(event.guild_id, event.state.user_id, STUDYING_ROLE, reason = "User joined Study VC")
 			UserRoles = len(event.state.member.get_roles())
 			await self.bot.rest.create_message(self.FocusChannelID, f"{event.state.member.mention}", embed = self.StudyVCJoinMessage(event.state.member, UserRoles), user_mentions = True)
+			if event.state.channel_id == CAMS_ON_VC:
+				await self.bot.rest.create_message(
+					self.FocusChannelID,
+					f"{event.state.member.mention} Turn on your Camera or you will be kicked from <#{event.state.channel_id}>",
+					user_mentions = True
+				)
 		elif event.old_state is not None and event.state is not None and (event.state.channel_id in self.StudyVCIDs):
 			if event.old_state.channel_id in self.StudyVCIDs:
 				return
+			await self.bot.rest.add_role_to_member(event.guild_id, event.state.user_id, STUDYING_ROLE, reason = "User joined Study VC")
 			UserRoles = len(event.state.member.get_roles())
 			await self.bot.rest.create_message(self.FocusChannelID, f"{event.state.member.mention}", embed = self.StudyVCJoinMessage(event.state.member, UserRoles), user_mentions = True)
-	
+			if event.state.channel_id == CAMS_ON_VC:
+				await self.bot.rest.create_message(
+					self.FocusChannelID,
+					f"{event.state.member.mention} Turn on your Camera or you will be kicked from <#{event.state.channel_id}>",
+					user_mentions = True
+				)
+		elif (event.old_state.channel_id in self.StudyVCIDs) and (event.state.channel_id not in self.StudyVCIDs or event.state.channel_id is None):
+			await self.bot.rest.remove_role_from_member(event.guild_id, event.state.user_id, STUDYING_ROLE, reason = "User left Study VC")
+
 	@lightbulb.plugins.listener(hikari.GuildMessageCreateEvent)
 	async def on_message_create(self, event : hikari.GuildMessageCreateEvent):
 		if event.author.is_bot:
@@ -294,6 +333,8 @@ class Study(lightbulb.Plugin):
 			if mentioneduser.is_bot:
 				return
 			elif mentioneduser.id == event.author_id:
+				return
+			if event.message.channel_id == 770940461337804810:
 				return
 			roles = mentioneduser.get_roles()
 			for r in roles:
@@ -312,9 +353,11 @@ class Study(lightbulb.Plugin):
 			StudyingMembers = await self.GetFocusedMembers()
 			for member in StudyingMembers:
 				if member[1] == "STREAM":
-					timer = ("total", "daily", "weekly", "monthly" "stream")
+					timer = ("total", "daily", "weekly", "monthly", "stream")
 				elif member[1] == "VIDEO":
 					timer = ("total", "daily", "weekly", "monthly", "video")
+				elif member[1] == "BOTH":
+					timer = ("total", "daily", "weekly", "monthly", "video", "stream")
 				else:
 					timer = ("total", "daily", "weekly", "monthly")
 				update_time(member[0], timer)
@@ -350,7 +393,22 @@ class Study(lightbulb.Plugin):
 						Utils.LOGCHANNELID,
 						f"Study Streak Club Monthly Leaderboard has been reset at <t:{int(time.time())}>"
 					)
-			await asyncio.sleep(3000)
+			await asyncio.sleep(3600)
+	
+	async def KickStalkersFromCamsVC(self):
+		while True:
+			await asyncio.sleep(KICK_STALKERS_AFTER)
+			MembersVoiceStates = self.FetchMembersInChannels([CAMS_ON_VC])
+			VoiceStates : VoiceState
+			for VoiceStates in MembersVoiceStates:
+				if not VoiceStates.member.is_bot:
+					if not VoiceStates.is_video_enabled:
+						await self.bot.rest.edit_member(int(GUILD_ID), VoiceStates.user_id, voice_channel = STUDYVC1, reason = "User did not turn on camera")
+						await self.bot.rest.create_message(
+							self.FocusChannelID,
+							f"{VoiceStates.member.mention} Moved you to <#{STUDYVC1}> for not turning on camera.",
+							user_mentions = True
+						)
 
 class StudyStreak(lightbulb.SlashCommandGroup):
 	description = "Base command for Study command group"
@@ -388,13 +446,13 @@ class Leaderboard(lightbulb.SlashSubCommand):
 			if member.id == ctx.author.id:
 				LeaderboardEmbed.add_field(
 					name = f"-> {rank} : {member}",
-					value = f"{hrs} Hrs {mins} Mins",
+					value = f"{hrs} Hrs {mins} Mins\n**Current Streak :** {memberinfo['streak']}",
 					inline = False
 				)
 			else:
 				LeaderboardEmbed.add_field(
 					name = f"{rank} : {member}",
-					value = f"{hrs} Hrs {mins} Mins",
+					value = f"{hrs} Hrs {mins} Mins\n**Current Streak :** {memberinfo['streak']}",
 					inline = False
 				)
 			
@@ -428,9 +486,9 @@ class Stats(lightbulb.SlashSubCommand):
 		times = []
 		StatsEmbed = hikari.Embed(
 			title = f"{target.display_name}'s Study Stats",
-			description = f"Stats reset between 12am and 1am",
+			description = f"\n**Current Streak :** {MemberStats['streak']}",
 			colour = random.randint(0, 0xffffff)
-		)
+		).set_footer(text = "Stats reset between 12am and 1am.")
 
 		for mins in (
 			MemberStats["total"],
