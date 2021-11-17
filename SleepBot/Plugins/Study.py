@@ -421,7 +421,7 @@ class Leaderboard(lightbulb.SlashSubCommand):
 
 	enabled_guilds : Optional[Iterable[int]] = (GUILD_ID,)
 
-	sort : str = Option("Choose sorting", required = True, choices = ['daily', 'weekly', 'monthly', 'total'])
+	sort : str = Option("Choose sorting", required = True, choices = ['daily', 'weekly', 'monthly', 'total', 'video', 'stream'])
 
 	async def callback(self, ctx: lightbulb.SlashCommandContext) -> None:
 		sort = ctx.options.sort
