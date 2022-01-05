@@ -2,8 +2,8 @@ import hikari
 import lightbulb
 import Utils
 import asyncio
-import sqlite3
 import time
+import motor.motor_asyncio
 
 from hikari.voices import VoiceState
 from random import randint
@@ -19,8 +19,15 @@ GUILD_ID = GUILD_ID[0]
 with open("./Secrets/studystreakmongourl") as f:
 	MongoURL = f.read().strip()
 
+"""
 cluster = MongoClient(MongoURL)
 membertime = cluster['bluelearn']['membertime']
+"""
+
+cluster = motor.motor_asyncio.AsyncIOMotorClient(MongoURL)
+db : motor.motor_asyncio.AsyncIOMotorDatabase = cluster.bluelearn
+membertime : motor.motor_asyncio.AsyncIOMotorCollection = db.membertime
+
 
 TIMER_UPDATE_INTERVAL = 1 # minutes
 KICK_STALKERS_AFTER = 45 # seconds
@@ -43,8 +50,8 @@ def MinutesToHours(mins : int):
 	minutes = mins % 60
 	return hours, minutes
 
-def add_member_to_db(userID : int) -> None:
-	membertime.insert_one(
+async def add_member_to_db(userID : int) -> None:
+	await membertime.insert_one(
 		{
 			"user_ID" : userID,
 			"total" : 0,
@@ -58,51 +65,51 @@ def add_member_to_db(userID : int) -> None:
 		}
 	)
 
-def update_time(userID : int, times = ("total", "daily", "weekly", "monthly")) -> None:
-	member_info = membertime.find_one({"user_ID" : userID})
+async def update_time(userID : int, times = ("total", "daily", "weekly", "monthly")) -> None:
+	member_info = await membertime.find_one({"user_ID" : userID})
 	if not member_info:
-		add_member_to_db(userID)
+		await add_member_to_db(userID)
 		return
 	for time in times:
-		membertime.update_one(
+		await membertime.update_one(
 			{"user_ID" : userID},
 			{"$set" : {f"{time}" : member_info[f"{time}"] + TIMER_UPDATE_INTERVAL}}
 		)
 
-def reset_daily_times() -> None:
+async def reset_daily_times() -> None:
 	memberinfo = membertime.find({})
-	for info in memberinfo:
-		membertime.update_one(
+	async for info in memberinfo:
+		await membertime.update_one(
 			{"user_ID" : info["user_ID"]},
 			{'$set' : {"yesterday" : info["daily"]}}
 		)
 		if info["yesterday"] > 0:
-			membertime.update_one(
+			await membertime.update_one(
 				{"user_ID" : info["user_ID"]},
 				{'$inc' : {"streak" : 1}}
 			)
 		else:
-			membertime.update_one(
+			await membertime.update_one(
 				{"user_ID" : info["user_ID"]},
 				{'$set' : {"streak" : 0}}
 			)
-		membertime.update_one(
+		await membertime.update_one(
 			{"user_ID" : info["user_ID"]},
 			{'$set' : {"daily" : 0}}
 		)
 
-def reset_weekly_times() -> None:
+async def reset_weekly_times() -> None:
 	memberinfo = membertime.find({})
-	for info in memberinfo:
-		membertime.update_one(
+	async for info in memberinfo:
+		await membertime.update_one(
 			{"user_ID" : info["user_ID"]},
 			{'$set' : {"weekly" : 0}}
 		)
 
-def reset_monthly_times() -> None:
+async def reset_monthly_times() -> None:
 	memberinfo = membertime.find({})
-	for info in memberinfo:
-		membertime.update_one(
+	async for info in memberinfo:
+		await membertime.update_one(
 			{"user_ID" : info["user_ID"]},
 			{'$set' : {"monthly" : 0}}
 		)
@@ -178,7 +185,7 @@ async def study_streak_cmd_group(ctx : context.Context) -> None:
 )
 @lightbulb.implements(commands.PrefixSubCommand, commands.SlashSubCommand)
 async def study_leaderboard_command(ctx : context.Context) -> None:
-	timer : str = ctx.options.timer
+	timer : str = ctx.options.timer or 'total'
 	timer = timer.lower()
 	leaderboard = membertime.find({}).sort(timer, -1)
 	rank = 1
@@ -187,7 +194,7 @@ async def study_leaderboard_command(ctx : context.Context) -> None:
 		description = f"Currently sorting by {timer}",
 		colour = randint(0, 0xffffff)
 	)
-	for memberinfo in leaderboard:
+	async for memberinfo in leaderboard:
 		if rank > 10:
 			break
 		try:
@@ -220,10 +227,10 @@ async def study_time_stats(ctx : context.Context) -> None:
 	target = ctx.options.target if ctx.options.target is not None else ctx.user
 	target = ctx.get_guild().get_member(target)
 	
-	MemberStats = membertime.find_one({"user_ID" : target.id})
+	MemberStats = await membertime.find_one({"user_ID" : target.id})
 	if not MemberStats:
-		add_member_to_db(target.id)
-		MemberStats = membertime.find_one({"user_ID" : target.id})
+		await add_member_to_db(target.id)
+		MemberStats = await membertime.find_one({"user_ID" : target.id})
 		
 	times = []
 	StatsEmbed = hikari.Embed(
@@ -350,7 +357,7 @@ async def RefreshMemberTimes():
 				timer = ("total", "daily", "weekly", "monthly", "video", "stream")
 			else:
 				timer = ("total", "daily", "weekly", "monthly")
-			update_time(member[0], timer)
+			await update_time(member[0], timer)
 		await app.rest.create_message(
 			Utils.LOGCHANNELID,
 			embed = hikari.Embed(
@@ -366,19 +373,19 @@ async def ResetLeaderboard():
 	while True:
 		now = datetime.now()
 		if now.hour == 0:
-			reset_daily_times()
+			await reset_daily_times()
 			await app.rest.create_message(
 				Utils.LOGCHANNELID,
 				f"Study Streak Club Daily Leaderboard has been reset at <t:{int(time.time())}>"
 			)
 			if now.weekday() == 0:
-				reset_weekly_times()
+				await reset_weekly_times()
 				await app.rest.create_message(
 					Utils.LOGCHANNELID,
 					f"Study Streak Club Weekly Leaderboard has been reset at <t:{int(time.time())}>"
 				)
 			if now.day == 1:
-				reset_monthly_times()
+				await reset_monthly_times()
 				await app.rest.create_message(
 					Utils.LOGCHANNELID,
 					f"Study Streak Club Monthly Leaderboard has been reset at <t:{int(time.time())}>"

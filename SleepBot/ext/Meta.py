@@ -13,11 +13,11 @@ from hikari import __version__ as hikari_version
 meta_plugin = lightbulb.Plugin("Meta")
 
 @meta_plugin.command
-@lightbulb.option("target", "The member to get info about", hikari.User, required = False)
+@lightbulb.option("user", "The member to get info about", hikari.User, required = False)
 @lightbulb.command("userinfo", "Get info about a server member", auto_defer = True)
 @lightbulb.implements(commands.PrefixCommand, commands.SlashCommand)
 async def userinfo(ctx : context.Context) -> None:
-    target = ctx.options.target if ctx.options.target is not None else ctx.user
+    target = ctx.options.user if ctx.options.user is not None else ctx.user
     target = ctx.get_guild().get_member(target)
 
     if not target:
@@ -92,6 +92,7 @@ async def about_cmd_group(ctx : context.Context) -> None:
 @lightbulb.command("sleepbot", "All about me!")
 @lightbulb.implements(commands.PrefixSubCommand, commands.SlashSubCommand)
 async def sleepbot_about(ctx : context.Context) -> None:
+    memper = format(psutil.Process().memory_percent(), ".2f")
     AboutEmbed = hikari.Embed(
 		title = "About SleepBot",
 		description = "SleepBot is a custom coded and open source bot made by [ZeusAbhijeet](https://github.com/ZeusAbhijeet/) for [Bluelearn.in](https://www.bluelearn.in/) Discord Server. It is written in Python and uses [Hikari](https://github.com/hikari-py/hikari) API wrapper and [Lightbulb](https://github.com/tandemdude/hikari-lightbulb) Command Wrapper. SleepBot can't be invited to your server.",
@@ -111,7 +112,7 @@ async def sleepbot_about(ctx : context.Context) -> None:
         inline = True
     ).add_field(
         "Memory Usage",
-        f"{psutil.virtual_memory()[2]}%",
+        f"{memper}%",
         inline = True
     ).set_author(
 		name = ctx.author.username,

@@ -2,14 +2,14 @@ import asyncio
 import hikari
 import lightbulb
 import aiohttp
-import sqlite3
+import aiosqlite
 import Utils
+import motor.motor_asyncio
 
 from random import randint
 from lightbulb import context, commands
 from Utils import NOXPCHANNEL, XPMUTEDROLEID, MAXXP, MINXP, XPTIMEOUT
 from hikari.files import Bytes
-from pymongo import MongoClient
 from typing import Optional
 
 with open("./Secrets/mongourl") as f:
@@ -18,9 +18,14 @@ with open("./Secrets/mongourl") as f:
 with open("./Secrets/key") as f:
 	APIKey = f.read().strip()
 
+"""
 cluster = MongoClient(MongoURL)
 levelling = cluster['bluelearn']['levelling']
-testingcoins = cluster['bluelearn']['coins']
+"""
+
+cluster = motor.motor_asyncio.AsyncIOMotorClient(MongoURL)
+db = cluster.bluelearn
+levelling = db.levelling
 
 level_plugin = lightbulb.Plugin("Levelling")
 
@@ -57,7 +62,7 @@ async def rankcardcmd(ctx : context.Context) -> None:
 	if XPMUTEDROLEID in target.role_ids:
 		return await ctx.respond(f":warning: You have been XP Muted. Hence I cannot show you your rank details.", flags = hikari.MessageFlag.EPHEMERAL)
 	
-	MemberData = levelling.find_one({"user_ID" : target.id})
+	MemberData = await levelling.find_one({"user_ID" : target.id})
 	if not MemberData:
 		return await ctx.respond(f"You have no rank. Keep chatting to gain XP", flags = hikari.MessageFlag.EPHEMERAL)
 	
@@ -71,7 +76,7 @@ async def rankcardcmd(ctx : context.Context) -> None:
 	xp -= ((300 / 2 * (lvl - 1) ** 2) + (300 / 2 * (lvl - 1)))
 
 	rankings = levelling.find().sort("xp", -1)
-	for x in rankings:
+	async for x in rankings:
 		rank += 1
 		if MemberData['user_ID'] == x['user_ID']:
 			break
@@ -99,7 +104,7 @@ async def ranklbcmd(ctx : context.Context) -> None:
 		description = "Here are the top 10 active members.",
 		colour = randint(0, 0xffffff)
 	)
-	for r in rankings:
+	async for r in rankings:
 		if rank > 12:
 			break
 		try:
@@ -138,7 +143,7 @@ async def setconfiggroup(ctx : context.Context) -> None:
 @lightbulb.implements(commands.PrefixSubCommand, commands.SlashSubCommand)
 async def setbackgroundcmd(ctx : context.Context) -> None:
 	url = ctx.options.url
-	MemberData = levelling.find_one(
+	MemberData = await levelling.find_one(
 		{
 			"user_ID" : ctx.author.id
 		}
@@ -149,7 +154,7 @@ async def setbackgroundcmd(ctx : context.Context) -> None:
 			if url is None:
 				return await ctx.respond("You have no background set.")
 		if url is None:
-			levelling.update_one(
+			await levelling.update_one(
 				{
 					'user_ID' : ctx.author.id
 				},
@@ -160,7 +165,7 @@ async def setbackgroundcmd(ctx : context.Context) -> None:
 				}
 			)
 		else:
-			levelling.update_one(
+			await levelling.update_one(
 				{
 					'user_ID' : ctx.author.id
 				},
@@ -172,7 +177,7 @@ async def setbackgroundcmd(ctx : context.Context) -> None:
 			)
 	else:
 		if url is None:
-			levelling.insert_one(
+			await levelling.insert_one(
 				{
 					"user_ID" : ctx.author.id,
 					"xp" : 0,
@@ -182,7 +187,7 @@ async def setbackgroundcmd(ctx : context.Context) -> None:
 			)
 			return await ctx.respond("Please provide a url.")
 		else:
-			levelling.insert_one(
+			await levelling.insert_one(
 				{
 					"user_ID" : ctx.author.id,
 					"xp" : 0,
@@ -197,14 +202,14 @@ async def setbackgroundcmd(ctx : context.Context) -> None:
 @lightbulb.command("xpcolour", "Set your xp bar's colour", aliases = ['xpcolor', 'xp'])
 @lightbulb.implements(commands.PrefixSubCommand, commands.SlashSubCommand)
 async def setxpcolourcmd(ctx : context.Context) -> None:
-	MemberData = levelling.find_one(
+	MemberData = await levelling.find_one(
 		{
 			"user_ID" : ctx.author.id
 		}
 	)
 	if MemberData:
 		if hex is None:
-			levelling.update_one(
+			await levelling.update_one(
 				{
 					'user_ID' : ctx.author.id
 				},
@@ -215,7 +220,7 @@ async def setxpcolourcmd(ctx : context.Context) -> None:
 				}
 			)
 		else:
-			levelling.update_one(
+			await levelling.update_one(
 				{
 					'user_ID' : ctx.author.id
 				},
@@ -227,7 +232,7 @@ async def setxpcolourcmd(ctx : context.Context) -> None:
 			)
 	else:
 		if hex is None:
-			levelling.insert_one(
+			await levelling.insert_one(
 				{
 					"user_ID" : ctx.author.id,
 					"xp" : 0,
@@ -237,7 +242,7 @@ async def setxpcolourcmd(ctx : context.Context) -> None:
 			)
 			return await ctx.respond("Please provide a hex colour.")
 		else:
-			levelling.insert_one(
+			await levelling.insert_one(
 				{
 					"user_ID" : ctx.author.id,
 					"xp" : 0,
@@ -276,17 +281,17 @@ async def noxpchannel(ctx : context.Context) -> None:
 		)
 		return
 	
-	conn = sqlite3.connect('Database.db')
-	c = conn.cursor()
-	c.execute(f"INSERT INTO channel_table VALUES (NULL, 'NONLEVELCHANNEL', {channel.id});")
-	conn.commit()
-	conn.close()
+	conn = await aiosqlite.connect('Database.db')
+	c = await conn.cursor()
+	await c.execute(f"INSERT INTO channel_table VALUES (NULL, 'NONLEVELCHANNEL', {channel.id});")
+	await conn.commit()
+	await conn.close()
 	NOXPCHANNEL.append(channel.id)
 	
 	await ctx.respond(
 		embed = hikari.Embed(
 			title = "Set No XP Channel",
-			description = f"Set {channel.mention} as a No XP Channel.",
+			description = f"Set <#{channel.id}> as a No XP Channel.",
 			colour = randint(0, 0xffffff)
 		),
 		reply = True
@@ -311,11 +316,11 @@ async def setmaxxp(ctx : context.Context) -> None:
 		)
 		return
 	
-	conn = sqlite3.connect('Database.db')
-	c = conn.cursor()
-	c.execute(f"UPDATE general_table SET info = {xp} WHERE title = 'MAXXP';")
-	conn.commit()
-	conn.close()
+	conn = await aiosqlite.connect('Database.db')
+	c = await conn.cursor()
+	await c.execute(f"UPDATE general_table SET info = {xp} WHERE title = 'MAXXP';")
+	await conn.commit()
+	await conn.close()
 	Utils.MAXXP = xp
 	await ctx.respond(
 		embed = hikari.Embed(
@@ -344,11 +349,11 @@ async def setminxp(ctx : context.Context) -> None:
 		)
 		return
 	
-	conn = sqlite3.connect('Database.db')
-	c = conn.cursor()
-	c.execute(f"UPDATE general_table SET info = {xp} WHERE title = 'MINXP';")
-	conn.commit()
-	conn.close()
+	conn = await aiosqlite.connect('Database.db')
+	c = await conn.cursor()
+	await c.execute(f"UPDATE general_table SET info = {xp} WHERE title = 'MINXP';")
+	await conn.commit()
+	await conn.close()
 	Utils.MINXP = xp
 	await ctx.respond(
 		embed = hikari.Embed(
@@ -369,15 +374,15 @@ async def on_message_create(event : hikari.MessageCreateEvent) -> None:
 		if event.author_id in brake:
 			return
 		
-		conn = sqlite3.connect('Database.db')
-		c = conn.cursor()
+		conn = await aiosqlite.connect('Database.db')
+		c = await conn.cursor()
 		member = await event.app.rest.fetch_member(event.message.guild_id, event.author_id)
 		if XPMUTEDROLEID in member.role_ids:
 			return
 		AssignXP = randint(int(MINXP), int(MAXXP))
-		MemberData = levelling.find_one({"user_ID" : event.author_id})
+		MemberData = await levelling.find_one({"user_ID" : event.author_id})
 		if not MemberData:
-			levelling.insert_one(
+			await levelling.insert_one(
 				{
 					"user_ID" : event.author_id,
 					"xp" : AssignXP,
@@ -389,7 +394,7 @@ async def on_message_create(event : hikari.MessageCreateEvent) -> None:
 		else:
 			AssignXP += MemberData['xp']
 			BeforeXP = MemberData['xp']
-			levelling.update_one(
+			await levelling.update_one(
 				{
 					'user_ID' : event.author_id
 				},
@@ -419,19 +424,19 @@ async def on_message_create(event : hikari.MessageCreateEvent) -> None:
 		if Beforelvl != Afterlvl:
 			LevelRoleID : tuple
 			if Afterlvl >= 5 and Afterlvl < 10:
-				LevelRoleID = c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL5';").fetchone()
+				LevelRoleID = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL5';").fetchone()
 			elif Afterlvl >= 10 and Afterlvl < 20:
-				LevelRoleID = c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL10';").fetchone()
+				LevelRoleID = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL10';").fetchone()
 			elif Afterlvl >= 20 and Afterlvl < 40:
-				LevelRoleID = c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL20';").fetchone()
+				LevelRoleID = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL20';").fetchone()
 			elif Afterlvl >= 40 and Afterlvl < 60:
-				LevelRoleID = c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL40';").fetchone()
+				LevelRoleID = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL40';").fetchone()
 			elif Afterlvl >= 60 and Afterlvl < 80:
-				LevelRoleID = c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL60';").fetchone()
+				LevelRoleID = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL60';").fetchone()
 			elif Afterlvl >= 80 and Afterlvl < 100:
-				LevelRoleID = c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL80';").fetchone()
+				LevelRoleID = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL80';").fetchone()
 			elif Afterlvl >= 100:
-				LevelRoleID = c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL100';").fetchone()
+				LevelRoleID = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL100';").fetchone()
 			else:
 				LevelRoleID = None
 
@@ -449,7 +454,7 @@ async def on_message_create(event : hikari.MessageCreateEvent) -> None:
 				embed = embed
 			)
 			
-		conn.close()
+		await conn.close()
 
 		brake.append(event.author_id)
 		await asyncio.sleep(int(XPTIMEOUT))

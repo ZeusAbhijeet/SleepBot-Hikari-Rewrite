@@ -2,6 +2,7 @@ from datetime import datetime
 import hikari
 import lightbulb
 import Utils
+import motor.motor_asyncio
 
 from pymongo import MongoClient
 from lightbulb import commands, context
@@ -12,20 +13,26 @@ coin_plugin = lightbulb.Plugin("Coins")
 with open("./Secrets/mongourl") as f:
 	MongoURL = f.read().strip()
 
+"""
 cluster = MongoClient(MongoURL)
 coinsdata = cluster['bluelearn']['coins']
+"""
 
-def AddToCoinsDatabase(user : hikari.User, coins : int) -> None:
-	UserCoinsData = coinsdata.find_one({"user_ID" : str(user.id)})
+cluster = motor.motor_asyncio.AsyncIOMotorClient(MongoURL)
+db = cluster.bluelearn
+coinsdata = db.coins
+
+async def AddToCoinsDatabase(user : hikari.User, coins : int) -> None:
+	UserCoinsData = await coinsdata.find_one({"user_ID" : str(user.id)})
 	if UserCoinsData:
 		CoinBalance = int(UserCoinsData['points']) + coins
-		coinsdata.update_one(
+		await coinsdata.update_one(
 			{'user_ID' : str(user.id)},
 			{'$set' : {'points' : CoinBalance}}
 		)
 	else:
 		CoinBalance = coins
-		coinsdata.insert_one(
+		await coinsdata.insert_one(
 			{
 				'user_ID' : str(user.id),
 				'points' : CoinBalance
@@ -46,13 +53,13 @@ def AddToCoinsDatabase(user : hikari.User, coins : int) -> None:
 	conn.close()
 	"""
 
-def FetchCoinsFromDatabase(user : hikari.User) -> int:
-	UserCoinsData = coinsdata.find_one({"user_ID" : str(user.id)})
+async def FetchCoinsFromDatabase(user : hikari.User) -> int:
+	UserCoinsData = await coinsdata.find_one({"user_ID" : str(user.id)})
 	if UserCoinsData:
 		TargetCoins = UserCoinsData['points']
 	else:
 		TargetCoins = 0
-		coinsdata.insert_one(
+		await coinsdata.insert_one(
 			{
 				'user_ID' : str(user.id),
 				'points' : TargetCoins
@@ -90,7 +97,7 @@ async def givecoinscmd(ctx : context.Context) -> None:
 	except:
 		return await ctx.respond(":warning: One of the user[s] does not seem to exist. Check the arguments passed again")
 	for m in memberlist:
-		AddToCoinsDatabase(m, coins)
+		await AddToCoinsDatabase(m, coins)
 		await ctx.respond(f"Successfully gave {coins} coins to {m.mention}!")
 	
 @coin_plugin.command
@@ -98,10 +105,10 @@ async def givecoinscmd(ctx : context.Context) -> None:
 @lightbulb.command(name = "coins", description = "Check your coins balance.", aliases = ['points', 'coin', 'point', 'blc'], auto_defer = True)
 @lightbulb.implements(commands.PrefixCommand, commands.SlashCommand)
 async def coinscmd(ctx : context.Context) -> None:
-	target = ctx.options.target if ctx.options.target is not None else ctx.user
+	target = ctx.options.user if ctx.options.user is not None else ctx.user
 	target = ctx.get_guild().get_member(target)
 
-	coins = FetchCoinsFromDatabase(target)
+	coins = await FetchCoinsFromDatabase(target)
 
 	await ctx.respond(embed = hikari.Embed(
 		title = f"User {target.display_name}'s Coin balance",
@@ -130,8 +137,7 @@ async def coinslbcmd(ctx : context.Context) -> None:
 		colour = randint(0, 0xffffff),
 		timestamp = datetime.now().astimezone()
 	)
-	for user in total_coins:
-		print(user)
+	async for user in total_coins:
 		try:
 			member = ctx.get_guild().get_member(int(user['user_ID']))
 		except:
@@ -158,7 +164,7 @@ async def on_message_create(event : hikari.MessageCreateEvent) -> None:
 	if randint(0, 200) == 0:
 		emoji = '🎖'
 		await event.app.rest.add_reaction(event.channel_id, event.message_id, emoji)
-		AddToCoinsDatabase(event.author, 5)
+		await AddToCoinsDatabase(event.author, 5)
 
 def load(bot : lightbulb.BotApp) -> None:
 	bot.add_plugin(coin_plugin)

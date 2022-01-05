@@ -17,7 +17,8 @@ bot = lightbulb.BotApp(
 	default_enabled_guilds = GUILD_ID,
 	delete_unbound_commands = True,
 	case_insensitive_prefix_commands = True,
-	owner_ids = (OWNER_ID,)
+	owner_ids = (OWNER_ID,),
+	allow_color=False
 )
 
 @bot.listen(hikari.StartingEvent)
