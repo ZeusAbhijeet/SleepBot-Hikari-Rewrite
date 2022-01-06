@@ -12,7 +12,7 @@ from lightbulb import commands, context
 mod_plugin = lightbulb.Plugin("Mod")
 
 @mod_plugin.command
-@lightbulb.add_checks(lightbulb.has_guild_permissions(hikari.Permissions.ADMINISTRATOR, hikari.Permissions.MODERATE_MEMBERS))
+@lightbulb.add_checks(lightbulb.has_guild_permissions(hikari.Permissions.MODERATE_MEMBERS))
 @lightbulb.option("reason", "The reason for timeout. Will show up in Audit Logs.", type = str, modifier = lightbulb.OptionModifier.CONSUME_REST, required = True)
 @lightbulb.option("duration", "The time to give time out for.", str, required = True)
 @lightbulb.option("user", "The user to timeout", hikari.User, required = True)

@@ -77,7 +77,7 @@ async def update_time(userID : int, times = ("total", "daily", "weekly", "monthl
 		)
 
 async def reset_daily_times() -> None:
-	memberinfo = membertime.find({})
+	memberinfo = membertime.find({'daily' : {'$gt' : 0}})
 	async for info in memberinfo:
 		await membertime.update_one(
 			{"user_ID" : info["user_ID"]},
@@ -99,7 +99,7 @@ async def reset_daily_times() -> None:
 		)
 
 async def reset_weekly_times() -> None:
-	memberinfo = membertime.find({})
+	memberinfo = membertime.find({'weekly' : {'$gt' : 0}})
 	async for info in memberinfo:
 		await membertime.update_one(
 			{"user_ID" : info["user_ID"]},
@@ -107,7 +107,7 @@ async def reset_weekly_times() -> None:
 		)
 
 async def reset_monthly_times() -> None:
-	memberinfo = membertime.find({})
+	memberinfo = membertime.find({'monthly' : {'$gt' : 0}})
 	async for info in memberinfo:
 		await membertime.update_one(
 			{"user_ID" : info["user_ID"]},
@@ -187,7 +187,7 @@ async def study_streak_cmd_group(ctx : context.Context) -> None:
 async def study_leaderboard_command(ctx : context.Context) -> None:
 	timer : str = ctx.options.timer or 'total'
 	timer = timer.lower()
-	leaderboard = membertime.find({}).sort(timer, -1)
+	leaderboard = membertime.find({}).sort(timer, -1).limit(15)
 	rank = 1
 	LeaderboardEmbed = hikari.Embed(
 		title = "Study Streak Club Leaderboard",
@@ -312,6 +312,14 @@ async def on_voice_state_update(event : hikari.VoiceStateUpdateEvent) -> None:
 			)
 	elif event.state and event.old_state and (event.old_state.channel_id in StudyVCIDs) and (event.state.channel_id not in StudyVCIDs or event.state.channel_id is None):
 		await app.rest.remove_role_from_member(event.guild_id, event.state.user_id, STUDYING_ROLE, reason = "User left Study VC")
+
+@study_plugin.command
+@lightbulb.add_checks(lightbulb.owner_only)
+@lightbulb.command("resetdaily", description = 'Resets daily stats')
+@lightbulb.implements(commands.PrefixCommand)
+async def resetdailymanual(ctx : context.Context) -> None:
+	await reset_daily_times()
+	await ctx.respond("Done")
 
 @study_plugin.listener(hikari.GuildMessageCreateEvent)
 async def on_message_create(event : hikari.GuildMessageCreateEvent):

@@ -14,6 +14,8 @@ async def on_error(event: lightbulb.CommandErrorEvent) -> None:
 
 	if isinstance(exception, lightbulb.NotOwner):
 		await event.context.respond("You are not the owner of this bot.")
+	elif isinstance(exception, lightbulb.CommandNotFound):
+		pass
 	elif isinstance(exception, lightbulb.CommandIsOnCooldown):
 		await event.context.respond(f"This command is on cooldown. Retry in `{exception.retry_after:.2f}` seconds.")
 	elif isinstance(exception, lightbulb.MissingRequiredPermission):

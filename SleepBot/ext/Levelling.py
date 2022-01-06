@@ -96,7 +96,7 @@ async def rankcardcmd(ctx : context.Context) -> None:
 @lightbulb.command("leaderboard", "Shows the top 12 active members by XP of the server", aliases = ['lb'], auto_defer = True)
 @lightbulb.implements(commands.PrefixSubCommand, commands.SlashSubCommand)
 async def ranklbcmd(ctx : context.Context) -> None:
-	rankings = levelling.find({}).sort("xp", -1)
+	rankings = levelling.find({}).sort("xp", -1).limit(15)
 	rank = 1
 	
 	RankEmbed = hikari.Embed(
@@ -424,19 +424,26 @@ async def on_message_create(event : hikari.MessageCreateEvent) -> None:
 		if Beforelvl != Afterlvl:
 			LevelRoleID : tuple
 			if Afterlvl >= 5 and Afterlvl < 10:
-				LevelRoleID = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL5';").fetchone()
+				cursor = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL5';")
+				LevelRoleID = await cursor.fetchone()
 			elif Afterlvl >= 10 and Afterlvl < 20:
-				LevelRoleID = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL10';").fetchone()
+				cursor = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL10';")
+				LevelRoleID = await cursor.fetchone()
 			elif Afterlvl >= 20 and Afterlvl < 40:
-				LevelRoleID = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL20';").fetchone()
+				cursor = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL20';")
+				LevelRoleID = await cursor.fetchone()
 			elif Afterlvl >= 40 and Afterlvl < 60:
-				LevelRoleID = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL40';").fetchone()
+				cursor = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL40';")
+				LevelRoleID = await cursor.fetchone()
 			elif Afterlvl >= 60 and Afterlvl < 80:
-				LevelRoleID = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL60';").fetchone()
+				cursor = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL60';")
+				LevelRoleID = await cursor.fetchone()
 			elif Afterlvl >= 80 and Afterlvl < 100:
-				LevelRoleID = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL80';").fetchone()
+				cursor = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL80';")
+				LevelRoleID = await cursor.fetchone()
 			elif Afterlvl >= 100:
-				LevelRoleID = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL100';").fetchone()
+				cursor = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL100';")
+				LevelRoleID = await cursor.fetchone()
 			else:
 				LevelRoleID = None
 
