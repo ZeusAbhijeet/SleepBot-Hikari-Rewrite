@@ -69,7 +69,7 @@ def loading_embed(loading_text : str = None) -> hikari.Embed:
 	return loading_embed
 
 # Custom check to see if the command is run in the Point command channel
-async def is_point_cmd_chnl(ctx : context.Context) -> bool:
+async def is_bot_cmd_chnl(ctx : context.Context) -> bool:
 	return int(ctx.channel_id) == int(POINTCMDCHANNELID)
 
 async def is_point_chnl(channel_id) -> bool:

@@ -37,6 +37,8 @@ async def ready_listener(event : hikari.StartedEvent) -> None:
 	)
 	await bot.rest.create_message(LOGCHANNELID, f"Bot is online at time <t:{int(time.time())}>")
 	logging.info(f"Bot is online!")
+	bot.unsubscribe(hikari.StartingEvent, starting_listener)
+	bot.unsubscribe(hikari.StartedEvent, ready_listener)
 
 @bot.command
 @lightbulb.add_checks(lightbulb.owner_only)

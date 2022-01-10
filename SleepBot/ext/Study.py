@@ -77,7 +77,7 @@ async def update_time(userID : int, times = ("total", "daily", "weekly", "monthl
 		)
 
 async def reset_daily_times() -> None:
-	memberinfo = membertime.find({'daily' : {'$gt' : 0}})
+	memberinfo = membertime.find({})
 	async for info in memberinfo:
 		await membertime.update_one(
 			{"user_ID" : info["user_ID"]},
@@ -199,6 +199,8 @@ async def study_leaderboard_command(ctx : context.Context) -> None:
 			break
 		try:
 			member = ctx.get_guild().get_member(memberinfo['user_ID'])
+			if member == None:
+				continue
 		except:
 			continue
 		hrs, mins = MinutesToHours(memberinfo[timer])

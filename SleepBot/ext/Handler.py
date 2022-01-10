@@ -16,6 +16,11 @@ async def on_error(event: lightbulb.CommandErrorEvent) -> None:
 		await event.context.respond("You are not the owner of this bot.")
 	elif isinstance(exception, lightbulb.CommandNotFound):
 		pass
+	elif isinstance(exception, lightbulb.CheckFailure):
+		if event.context.command.plugin.name == "Coins" or event.context.command.plugin.name == "Levelling":
+			await event.context.respond("You cannot use this command here. Use it in <#773962393109135380>")
+		else:
+			await event.context.respond("A command check failed to run. You may be running this command is an unauthorised channel.")
 	elif isinstance(exception, lightbulb.CommandIsOnCooldown):
 		await event.context.respond(f"This command is on cooldown. Retry in `{exception.retry_after:.2f}` seconds.")
 	elif isinstance(exception, lightbulb.MissingRequiredPermission):

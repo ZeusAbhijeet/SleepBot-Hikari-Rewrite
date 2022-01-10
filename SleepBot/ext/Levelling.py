@@ -46,14 +46,17 @@ async def RankCardGen(member : hikari.Member, level : int, current_xp : int, nex
 			return rankcard
 
 @level_plugin.command
+@lightbulb.check_exempt(lightbulb.owner_only)
+@lightbulb.add_checks(lightbulb.Check(Utils.is_bot_cmd_chnl))
 @lightbulb.command("rank", "All level related commands", aliases = ['level'], auto_defer = True)
 @lightbulb.implements(commands.PrefixCommandGroup, commands.SlashCommandGroup)
 async def rankcmdgroup(ctx : context.Context) -> None:
 	pass
 
 @rankcmdgroup.child
+@lightbulb.check_exempt(lightbulb.owner_only)
 @lightbulb.option("user", "User to fetch rank card of", type = hikari.User, required = False)
-@lightbulb.command("card", "Fetch a card with all your level and rank details", auto_defer = True)
+@lightbulb.command("card", "Fetch a card with all your level and rank details", auto_defer = True, inherit_checks = True)
 @lightbulb.implements(commands.PrefixSubCommand, commands.SlashSubCommand)
 async def rankcardcmd(ctx : context.Context) -> None:
 	target = ctx.options.user if ctx.options.user is not None else ctx.user
@@ -93,7 +96,8 @@ async def rankcardcmd(ctx : context.Context) -> None:
 	await ctx.respond(attachment = Bytes(rankcard, "rank_card.png"), reply = True)
 
 @rankcmdgroup.child
-@lightbulb.command("leaderboard", "Shows the top 12 active members by XP of the server", aliases = ['lb'], auto_defer = True)
+@lightbulb.check_exempt(lightbulb.owner_only)
+@lightbulb.command("leaderboard", "Shows the top 12 active members by XP of the server", aliases = ['lb'], auto_defer = True, inherit_checks = True)
 @lightbulb.implements(commands.PrefixSubCommand, commands.SlashSubCommand)
 async def ranklbcmd(ctx : context.Context) -> None:
 	rankings = levelling.find({}).sort("xp", -1).limit(15)
@@ -202,6 +206,7 @@ async def setbackgroundcmd(ctx : context.Context) -> None:
 @lightbulb.command("xpcolour", "Set your xp bar's colour", aliases = ['xpcolor', 'xp'])
 @lightbulb.implements(commands.PrefixSubCommand, commands.SlashSubCommand)
 async def setxpcolourcmd(ctx : context.Context) -> None:
+	hex = ctx.options.hex
 	MemberData = await levelling.find_one(
 		{
 			"user_ID" : ctx.author.id
