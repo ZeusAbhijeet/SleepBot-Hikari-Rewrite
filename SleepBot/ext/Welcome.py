@@ -23,9 +23,6 @@ def WelcomeEmbed(target : hikari.User) -> hikari.Embed:
 	).add_field(
 		name = "Check out the Server Guide Video",
 		value = "If you are new to discord, you can watch a tutorial video which will help you to go about the server.\n**Tutorial:** [Click here](https://youtu.be/AUimFYOBXYU?t=291)"
-	).add_field(
-		name = "Getting to Know You",
-		value = "Please fill up this form so that we know your interests and can make the community better! **[Click here](https://forms.gle/5Zhums746RWRcAhu7)**"
 	).set_image(
 		'https://res.cloudinary.com/zeusabhijeet/image/upload/v1624014516/Clinify%20Stuff/Bluelearn_welcome_banner_1.gif'
 	).set_author(

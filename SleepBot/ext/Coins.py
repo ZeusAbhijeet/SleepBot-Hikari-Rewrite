@@ -101,8 +101,6 @@ async def givecoinscmd(ctx : context.Context) -> None:
 		await ctx.respond(f"Successfully gave {coins} coins to {m.mention}!")
 	
 @coin_plugin.command
-@lightbulb.check_exempt(lightbulb.owner_only)
-@lightbulb.add_checks(lightbulb.Check(Utils.is_bot_cmd_chnl))
 @lightbulb.option("user", "The user to check the coin balance of.", type = hikari.User, required = False)
 @lightbulb.command(name = "coins", description = "Check your coins balance.", aliases = ['points', 'coin', 'point', 'blc'], auto_defer = True)
 @lightbulb.implements(commands.PrefixCommand, commands.SlashCommand)
@@ -120,8 +118,6 @@ async def coinscmd(ctx : context.Context) -> None:
 	))
 
 @coin_plugin.command
-@lightbulb.check_exempt(lightbulb.owner_only)
-@lightbulb.add_checks(lightbulb.Check(Utils.is_bot_cmd_chnl))
 @lightbulb.command(name = "coins_leaderboard", description = "Show the top 20 members with highest number of coins", aliases = ['coinslb', 'coinlb', 'cointop', 'coinstop'], auto_defer = True)
 @lightbulb.implements(commands.PrefixCommand, commands.SlashCommand)
 async def coinslbcmd(ctx : context.Context) -> None:

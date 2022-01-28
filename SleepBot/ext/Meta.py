@@ -212,17 +212,6 @@ async def say_cmd(ctx : context.Context) -> None:
     await ctx.app.rest.create_message(channel, f"```\n{text}\n```\n- {ctx.author.mention}")
     await ctx.respond(f"Message sent successfully UwU")
 
-@meta_plugin.set_error_handler()
-@meta_plugin.listener(lightbulb.CommandErrorEvent)
-async def on_plugin_command_error(event : lightbulb.CommandErrorEvent) -> bool:
-    exception = event.exception.__cause__ or event.exception
-    
-    if isinstance(exception, lightbulb.NotOwner):
-        await event.context.respond(f"I am currently in testing, hence I only respond to commands triggered by <@!{OWNER_ID}>")
-        return True
-    else:
-        return False
-
 def load(bot : lightbulb.BotApp) -> None:
 	bot.add_plugin(meta_plugin)
 
