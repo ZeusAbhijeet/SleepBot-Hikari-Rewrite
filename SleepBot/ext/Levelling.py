@@ -46,6 +46,45 @@ async def RankCardGen(member : hikari.Member, level : int, current_xp : int, nex
 			return rankcard
 
 @level_plugin.command
+@lightbulb.command("Rank Card", "Fetch a card with all your level and rank details", auto_defer = True)
+@lightbulb.implements(commands.UserCommand)
+async def rankcardcmd(ctx : context.Context) -> None:
+	target = ctx.get_guild().get_member(ctx.options.target)
+
+	if XPMUTEDROLEID in target.role_ids:
+		return await ctx.respond(f":warning: {target.mention} has been XP Muted. Hence I cannot show you the rank details.", flags = hikari.MessageFlag.EPHEMERAL)
+	
+	MemberData = await levelling.find_one({"user_ID" : target.id})
+	if not MemberData:
+		return await ctx.respond(f"{target.mention} has no rank.", flags = hikari.MessageFlag.EPHEMERAL)
+	
+	xp : int = MemberData['xp']
+	lvl = 0
+	rank = 0
+	while True:
+		if xp < ((300 / 2 * (lvl ** 2)) + (300 / 2 * lvl)):
+			break
+		lvl += 1
+	xp -= ((300 / 2 * (lvl - 1) ** 2) + (300 / 2 * (lvl - 1)))
+
+	rankings = levelling.find().sort("xp", -1)
+	async for x in rankings:
+		rank += 1
+		if MemberData['user_ID'] == x['user_ID']:
+			break
+	
+	rankcard = await RankCardGen(
+		member = target,
+		level = lvl,
+		current_xp = int(xp),
+		next_xp = int(300 * 2 * ((1 / 2) * lvl)),
+		rank = rank,
+		bg = MemberData['background'],
+		xp_bar = MemberData['xp_colour']
+	)
+	await ctx.respond(attachment = Bytes(rankcard, "rank_card.png"), reply = True)
+
+@level_plugin.command
 @lightbulb.command("rank", "All level related commands", aliases = ['level'], auto_defer = True)
 @lightbulb.implements(commands.PrefixCommandGroup, commands.SlashCommandGroup)
 async def rankcmdgroup(ctx : context.Context) -> None:
@@ -369,6 +408,8 @@ async def setminxp(ctx : context.Context) -> None:
 @level_plugin.listener(hikari.MessageCreateEvent)
 async def on_message_create(event : hikari.MessageCreateEvent) -> None:
 	global brake, role_levels
+	if not event.message.guild_id:
+		return
 	if event.channel_id in NOXPCHANNEL:
 		return
 	if not event.author.is_bot:

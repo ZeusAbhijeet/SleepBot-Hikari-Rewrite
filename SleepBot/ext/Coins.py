@@ -118,6 +118,21 @@ async def coinscmd(ctx : context.Context) -> None:
 	))
 
 @coin_plugin.command
+@lightbulb.command(name = "BL Coins Balance", description = "Check your coins balance.", auto_defer = True)
+@lightbulb.implements(commands.UserCommand)
+async def coinscmd(ctx : context.Context) -> None:
+	target = ctx.get_guild().get_member(ctx.options.target)
+
+	coins = await FetchCoinsFromDatabase(target)
+
+	await ctx.respond(embed = hikari.Embed(
+		title = f"User {target.display_name}'s Coin balance",
+		description = f"{target.mention} has {coins} coins in their balance.",
+		colour = randint(0, 0xffffff),
+		timestamp = datetime.now().astimezone()
+	))
+
+@coin_plugin.command
 @lightbulb.command(name = "coins_leaderboard", description = "Show the top 20 members with highest number of coins", aliases = ['coinslb', 'coinlb', 'cointop', 'coinstop'], auto_defer = True)
 @lightbulb.implements(commands.PrefixCommand, commands.SlashCommand)
 async def coinslbcmd(ctx : context.Context) -> None:
@@ -161,10 +176,10 @@ async def on_message_create(event : hikari.MessageCreateEvent) -> None:
 		return
 	if event.author.is_bot:
 		return
-	if randint(0, 200) == 0:
+	if randint(0, 175) == 0:
 		emoji = '🎖'
 		await event.app.rest.add_reaction(event.channel_id, event.message_id, emoji)
-		await AddToCoinsDatabase(event.author, 5)
+		await AddToCoinsDatabase(event.author, 10)
 
 def load(bot : lightbulb.BotApp) -> None:
 	bot.add_plugin(coin_plugin)

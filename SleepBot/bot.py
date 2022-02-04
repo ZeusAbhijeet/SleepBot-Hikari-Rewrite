@@ -4,6 +4,7 @@ import time
 import logging
 
 from lightbulb import commands, context
+from lightbulb.ext import tasks
 from __init__ import GUILD_ID, OWNER_ID, __version__
 from Utils import LOGCHANNELID
 
@@ -20,6 +21,7 @@ bot = lightbulb.BotApp(
 	owner_ids = (OWNER_ID,),
 	allow_color=False
 )
+tasks.load(bot)
 
 @bot.listen(hikari.StartingEvent)
 async def starting_listener(event : hikari.StartingEvent) -> None:
