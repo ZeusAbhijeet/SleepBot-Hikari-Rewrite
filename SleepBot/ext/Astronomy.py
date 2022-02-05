@@ -20,12 +20,9 @@ async def apod_cmd(ctx : context.Context) -> None:
 
 	embed = hikari.Embed(
 		title = result['title'],
-		description = f"[Click here to view]({result['url']})" if result['media_type'] != "image" else f"",
+		description = f"[Click here to view]({result['url']})\n**Explanation:** {result['explanation']}" if result['media_type'] != "image" else f"**Explanation:** {result['explanation']}",
 		url = 'https://apod.nasa.gov/apod/astropix.html',
 		colour = randint(0, 0xffffff)
-	).add_field(
-		name = "Explanation",
-		value = result["explanation"]
 	).set_author(
 		name = f"Astronomy Picture of the Day: {result['date']}"
 	).set_footer(
