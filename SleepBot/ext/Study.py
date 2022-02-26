@@ -10,9 +10,8 @@ from hikari.voices import VoiceState
 from random import randint
 from lightbulb import commands, context
 from lightbulb.ext import tasks
-from pymongo import MongoClient
-from Utils import StaffRoleID, StudyVCIDs, FocusChannelID
-from typing import List, Optional
+from Utils import LOGCHANNELID, StaffRoleID, StudyVCIDs, FocusChannelID
+from typing import List
 from datetime import datetime
 from __init__ import GUILD_ID
 
@@ -38,8 +37,6 @@ CAMS_ON_VC = 770670934565715998
 STUDYVC1 = 818011398231687178
 
 STUDYING_ROLE = 816873155246817290
-
-app : lightbulb.BotApp
 
 # /---------------------------------------------------------/
 # /    All important functions to help me manage the data   /
@@ -102,6 +99,23 @@ async def reset_daily_times() -> None:
 
 async def reset_weekly_times() -> None:
 	memberinfo = membertime.find({'weekly' : {'$gt' : 0}})
+	top_members = membertime.find({'weekly' : {'$gt' : 0}}).sort('weekly', -1).limit(15)
+	top_member_ids = ""
+	async for top in top_members:
+		top_member_ids += f"{top['user_ID']}, "
+	msg = await study_plugin.app.rest.create_message(
+		LOGCHANNELID,
+		f"<@!{study_plugin.app.owner_ids[0]}>",
+		embed = hikari.Embed(
+			title = 'Weekly Top Members',
+			description = top_member_ids
+		),
+		user_mentions = True
+	)
+	pins = await study_plugin.app.rest.fetch_pins(LOGCHANNELID)
+	for pin in pins:
+		await study_plugin.app.rest.unpin_message(LOGCHANNELID, pin)
+	await study_plugin.app.rest.pin_message(LOGCHANNELID, msg)
 	async for info in memberinfo:
 		await membertime.update_one(
 			{"user_ID" : info["user_ID"]},
@@ -376,6 +390,14 @@ class AcceptReset(miru.Button):
 	async def callback(self, ctx : miru.Context) -> None:
 		await ctx.defer()
 		await resetspecificmember(self.view.user)
+		await ctx.edit_response(
+				embed = hikari.Embed(
+					title = "Reset Member",
+					description = f"Successfully reset {self.view.user.mention}'s stats.",
+					colour = 0xd85759
+				),
+				components = []
+			)
 		self.view.answer = True
 		self.view.stop()
 
@@ -385,6 +407,14 @@ class RejectReset(miru.Button):
 	
 	async def callback(self, ctx : miru.Context) -> None:
 		await ctx.defer()
+		await ctx.edit_response(
+				embed = hikari.Embed(
+					title = "Reset Member",
+					description = "Operation cancelled",
+					colour = 0xd85759
+				),
+				components = []
+			)
 		self.view.answer = False
 		self.view.stop()
 
@@ -412,6 +442,7 @@ async def resetmember(ctx : context.Context) -> None:
 	await view.wait()
 
 	if hasattr(view, "answer"):
+		return
 		if view.answer == True:
 			await ctx.edit_last_response(
 				embed = hikari.Embed(
@@ -573,12 +604,13 @@ async def KickStalkersFromCamsVC():
 def load(bot : lightbulb.BotApp) -> None:
 	global app
 	bot.add_plugin(study_plugin)
-	miru.load(study_plugin.app)
-	app = bot
 	RefreshMemberTimes.start()
 	ResetLeaderboard.start()
 	KickStalkersFromCamsVC.start()
 
 def unload(bot : lightbulb.BotApp) -> None:
 	bot.remove_plugin(study_plugin)
+	RefreshMemberTimes.stop()
+	ResetLeaderboard.stop()
+	KickStalkersFromCamsVC.stop()
 	

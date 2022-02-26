@@ -2,6 +2,7 @@ import hikari
 import lightbulb
 import time
 import logging
+import miru
 
 from lightbulb import commands, context
 from lightbulb.ext import tasks
@@ -22,6 +23,7 @@ bot = lightbulb.BotApp(
 	allow_color=False
 )
 tasks.load(bot)
+miru.load(bot)
 
 @bot.listen(hikari.StartingEvent)
 async def starting_listener(event : hikari.StartingEvent) -> None:

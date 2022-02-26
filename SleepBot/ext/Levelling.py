@@ -8,7 +8,7 @@ import motor.motor_asyncio
 
 from random import randint
 from lightbulb import context, commands
-from Utils import NOXPCHANNEL, XPMUTEDROLEID, MAXXP, MINXP, XPTIMEOUT
+from Utils import LEVEL10, LEVEL100, LEVEL20, LEVEL40, LEVEL5, LEVEL60, LEVEL80, NOXPCHANNEL, XPMUTEDROLEID, MAXXP, MINXP, XPTIMEOUT
 from hikari.files import Bytes
 from typing import Optional
 
@@ -30,7 +30,7 @@ levelling = db.levelling
 level_plugin = lightbulb.Plugin("Levelling")
 
 brake = []
-role_levels = [5, 10, 20, 40, 60, 80, 100]
+role_levels = [2, 5, 10, 20, 30, 40, 50]
 
 async def RankCardGen(member : hikari.Member, level : int, current_xp : int, next_xp : int, rank : int, bg : Optional[str], xp_bar : Optional[str]) -> bytes:
 	async with aiohttp.ClientSession() as rankCardSession:
@@ -416,8 +416,6 @@ async def on_message_create(event : hikari.MessageCreateEvent) -> None:
 		if event.author_id in brake:
 			return
 		
-		conn = await aiosqlite.connect('Database.db')
-		c = await conn.cursor()
 		member = await event.app.rest.fetch_member(event.message.guild_id, event.author_id)
 		if XPMUTEDROLEID in member.role_ids:
 			return
@@ -464,37 +462,30 @@ async def on_message_create(event : hikari.MessageCreateEvent) -> None:
 		Afterxp -= ((300 / 2 * (Afterlvl - 1) ** 2) + (300 / 2 * (Afterlvl - 1)))
 
 		if Beforelvl != Afterlvl:
-			LevelRoleID : tuple
-			if Afterlvl >= 5 and Afterlvl < 10:
-				cursor = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL5';")
-				LevelRoleID = await cursor.fetchone()
+			LevelRoleID : int
+			if Afterlvl >= 1 and Afterlvl < 5:
+				LevelRoleID = LEVEL5
+			elif Afterlvl >= 5 and Afterlvl < 10:
+				LevelRoleID = LEVEL10
 			elif Afterlvl >= 10 and Afterlvl < 20:
-				cursor = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL10';")
-				LevelRoleID = await cursor.fetchone()
-			elif Afterlvl >= 20 and Afterlvl < 40:
-				cursor = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL20';")
-				LevelRoleID = await cursor.fetchone()
-			elif Afterlvl >= 40 and Afterlvl < 60:
-				cursor = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL40';")
-				LevelRoleID = await cursor.fetchone()
-			elif Afterlvl >= 60 and Afterlvl < 80:
-				cursor = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL60';")
-				LevelRoleID = await cursor.fetchone()
-			elif Afterlvl >= 80 and Afterlvl < 100:
-				cursor = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL80';")
-				LevelRoleID = await cursor.fetchone()
-			elif Afterlvl >= 100:
-				cursor = await c.execute("SELECT role_ID FROM role_table WHERE title = 'LEVEL100';")
-				LevelRoleID = await cursor.fetchone()
+				LevelRoleID = LEVEL20
+			elif Afterlvl >= 20 and Afterlvl < 30:
+				LevelRoleID = LEVEL40
+			elif Afterlvl >= 30 and Afterlvl < 40:
+				LevelRoleID = LEVEL60
+			elif Afterlvl >= 40 and Afterlvl < 50:
+				LevelRoleID = LEVEL80
+			elif Afterlvl >= 50:
+				LevelRoleID = LEVEL100
 			else:
 				LevelRoleID = None
 
 			if LevelRoleID:
-				await member.add_role(role = LevelRoleID[0], reason = "Level Up Reward")
+				await member.add_role(role = LevelRoleID, reason = "Level Up Reward")
 
 			embed = hikari.Embed(
 				title = "Level Up!",
-				description = f"{event.author.mention} has leveled up to level {Afterlvl}!" if Afterlvl not in role_levels else f"{event.author.mention} has leveled up to level {Afterlvl} and has received <@&{LevelRoleID[0]}>",
+				description = f"{event.author.mention} has leveled up to level {Afterlvl}!" if Afterlvl not in role_levels else f"{event.author.mention} has leveled up to level {Afterlvl} and has received <@&{LevelRoleID}>",
 				colour = randint(0, 0xffffff)
 			)
 
@@ -503,8 +494,6 @@ async def on_message_create(event : hikari.MessageCreateEvent) -> None:
 				embed = embed
 			)
 			
-		await conn.close()
-
 		brake.append(event.author_id)
 		await asyncio.sleep(int(XPTIMEOUT))
 		brake.remove(event.author_id)

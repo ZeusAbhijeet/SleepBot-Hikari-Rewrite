@@ -13,11 +13,6 @@ coin_plugin = lightbulb.Plugin("Coins")
 with open("./Secrets/mongourl") as f:
 	MongoURL = f.read().strip()
 
-"""
-cluster = MongoClient(MongoURL)
-coinsdata = cluster['bluelearn']['coins']
-"""
-
 cluster = motor.motor_asyncio.AsyncIOMotorClient(MongoURL)
 db = cluster.bluelearn
 coinsdata = db.coins
@@ -38,20 +33,6 @@ async def AddToCoinsDatabase(user : hikari.User, coins : int) -> None:
 				'points' : CoinBalance
 			}
 		)
-	"""
-	conn = sqlite3.connect('Database.db')
-	c = conn.cursor()
-	targetCoins = c.execute(f"SELECT points FROM point_table WHERE user_ID = {user.id};").fetchone()
-	if targetCoins is None:
-		targetCoins = coins
-		c.execute(F"INSERT INTO point_table VALUES (NULL, {user.id}, {targetCoins});")
-	else:
-		targetCoins = targetCoins[0]
-		targetCoins += coins
-		c.execute(f"UPDATE point_table SET points = {targetCoins} WHERE user_ID = {user.id};")
-	conn.commit()
-	conn.close()
-	"""
 
 async def FetchCoinsFromDatabase(user : hikari.User) -> int:
 	UserCoinsData = await coinsdata.find_one({"user_ID" : str(user.id)})
@@ -66,19 +47,6 @@ async def FetchCoinsFromDatabase(user : hikari.User) -> int:
 			}
 		)
 	return TargetCoins
-	"""
-	conn = sqlite3.connect('Database.db')
-	c = conn.cursor()
-	target_coins = c.execute(f"SELECT points FROM point_table WHERE user_ID = {user.id};").fetchone()
-	if target_coins is None:
-		target_coins = 0
-		c.execute(f"INSERT INTO point_table VALUES (NULL, {user.id}, {target_coins});")
-		conn.commit()
-	else:
-		target_coins = target_coins[0]
-	conn.close()
-	return target_coins
-	"""
 
 @coin_plugin.command
 @lightbulb.add_checks(lightbulb.owner_only)
@@ -136,15 +104,6 @@ async def coinscmd(ctx : context.Context) -> None:
 @lightbulb.command(name = "coins_leaderboard", description = "Show the top 20 members with highest number of coins", aliases = ['coinslb', 'coinlb', 'cointop', 'coinstop'], auto_defer = True)
 @lightbulb.implements(commands.PrefixCommand, commands.SlashCommand)
 async def coinslbcmd(ctx : context.Context) -> None:
-	"""
-	conn = sqlite3.connect('Database.db')
-	c = conn.cursor()
-	DB = c.execute('SELECT user_ID, points FROM point_table').fetchall()
-	conn.close()
-
-	total_coins = dict(DB)
-	"""
-
 	total_coins = coinsdata.find({}).sort("points", -1)
 	top_20 = 1
 	embed = hikari.Embed(
