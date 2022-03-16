@@ -273,7 +273,11 @@ async def study_time_stats(ctx : context.Context) -> None:
 		title = f"{target.display_name}'s Study Stats",
 		description = f"\n**Current Streak :** {MemberStats['streak']}",
 		colour = randint(0, 0xffffff)
-	).set_footer(text = "Stats reset between 12am and 1am.")
+	).set_footer(
+		text = "Stats reset between 12am and 1am."
+	).set_thumbnail(
+		target.avatar_url or target.default_avatar_url
+	)
 
 	for mins in (
 		MemberStats["total"],
@@ -336,7 +340,12 @@ async def study_time_stats(ctx : context.Context) -> None:
 		title = f"{target.display_name}'s Study Stats",
 		description = f"\n**Current Streak :** {MemberStats['streak']}",
 		colour = randint(0, 0xffffff)
-	).set_footer(text = "Stats reset between 12am and 1am.")
+	).set_footer(
+		text = "Stats reset between 12am and 1am."
+	).set_thumbnail(
+		target.avatar_url or target.default_avatar_url
+	)
+	
 
 	for mins in (
 		MemberStats["total"],

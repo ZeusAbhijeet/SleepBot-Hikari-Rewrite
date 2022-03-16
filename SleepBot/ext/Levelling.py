@@ -88,7 +88,7 @@ async def rankcardcmd(ctx : context.Context) -> None:
 @lightbulb.command("rank", "All level related commands", aliases = ['level'], auto_defer = True)
 @lightbulb.implements(commands.PrefixCommandGroup, commands.SlashCommandGroup)
 async def rankcmdgroup(ctx : context.Context) -> None:
-	pass
+	await ctx.respond("Use either `/rank card` or `rank leaderboard`.")
 
 @rankcmdgroup.child
 @lightbulb.option("user", "User to fetch rank card of", type = hikari.User, required = False)
@@ -132,19 +132,33 @@ async def rankcardcmd(ctx : context.Context) -> None:
 	await ctx.respond(attachment = Bytes(rankcard, "rank_card.png"), reply = True)
 
 @rankcmdgroup.child
-@lightbulb.command("leaderboard", "Shows the top 12 active members by XP of the server", aliases = ['lb'], auto_defer = True, inherit_checks = True)
+@lightbulb.command("leaderboard", "Shows the top 100 active members by XP of the server", aliases = ['lb'], auto_defer = True, inherit_checks = True)
 @lightbulb.implements(commands.PrefixSubCommand, commands.SlashSubCommand)
 async def ranklbcmd(ctx : context.Context) -> None:
-	rankings = levelling.find({}).sort("xp", -1).limit(15)
+	rankings = levelling.find({}).sort("xp", -1).limit(115)
 	rank = 1
 	
+	"""
 	RankEmbed = hikari.Embed(
 		title = "Level Leaderboard",
 		description = "Here are the top 10 active members.",
 		colour = randint(0, 0xffffff)
 	)
+	"""
+	
+	rank_pag = lightbulb.utils.EmbedPaginator(max_lines = 10)
+
+	@rank_pag.embed_factory()
+	def build_embed(page_index, page_content) -> hikari.Embed:
+		return hikari.Embed(
+			title = "Level Leaderboard",
+			description = f"Here are the top 100 active members.\n\n {page_content}",
+			colour = 0x76ffa1 
+		).set_footer(f"Page {page_index}/10")
+
+	
 	async for r in rankings:
-		if rank > 12:
+		if rank > 100:
 			break
 		try:
 			member = ctx.get_guild().get_member(r['user_ID'])
@@ -161,14 +175,21 @@ async def ranklbcmd(ctx : context.Context) -> None:
 				break
 			lvl += 1
 		
+		rank_pag.add_line(f"**{rank}. {member}**\t•\t**Level :** {lvl}\t•\t**XP :** {xp}" if ctx.author.id != member.id else f"**-> {rank}. {member} <-**\t•\t**Level :** {lvl}\t•\t**XP :** {xp}")
+
+		"""
 		RankEmbed.add_field(
 			name = f"{rank}. {member.display_name}",
 			value = f"Level : {lvl}\nXP : {xp}",
 			inline = True
 		)
+		"""
 		rank = rank + 1
-		
-	await ctx.respond(embed = RankEmbed, reply = True)
+	
+	navigator = lightbulb.utils.ButtonNavigator(rank_pag.build_pages(), timeout = 60)
+	await navigator.run(ctx)
+
+	#await ctx.respond(embed = RankEmbed, reply = True)
 
 @level_plugin.command
 @lightbulb.command("setconfig", description = "Set your levelling configs", auto_defer = True)

@@ -1,3 +1,4 @@
+import aiosqlite
 import hikari
 import lightbulb
 import time
@@ -27,6 +28,8 @@ miru.load(bot)
 
 @bot.listen(hikari.StartingEvent)
 async def starting_listener(event : hikari.StartingEvent) -> None:
+	global conn
+	conn = await aiosqlite.connect('Database.db')
 	bot.load_extensions_from("./ext/", must_exist=True)
 
 
@@ -43,6 +46,12 @@ async def ready_listener(event : hikari.StartedEvent) -> None:
 	logging.info(f"Bot is online!")
 	bot.unsubscribe(hikari.StartingEvent, starting_listener)
 	bot.unsubscribe(hikari.StartedEvent, ready_listener)
+
+@bot.listen(hikari.StoppingEvent)
+async def stopping_database_connection(event : hikari.StoppedEvent) -> None:
+	global conn
+	await conn.commit()
+	await conn.close()
 
 @bot.command
 @lightbulb.add_checks(lightbulb.owner_only)

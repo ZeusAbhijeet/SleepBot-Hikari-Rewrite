@@ -1,0 +1,11 @@
+CREATE TABLE tickets_table (
+	db_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+	ticket_author INTEGER NOT NULL,
+	ticket_channel_ID INTEGER,
+	reason TEXT,
+	is_closed TEXT NOT NULL,
+	responsible_mod_ID INTEGER,
+	closing_reason TEXT,
+	closed_by INTEGER,
+	ticket_transcript TEXT
+);

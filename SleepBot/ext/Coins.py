@@ -101,16 +101,28 @@ async def coinscmd(ctx : context.Context) -> None:
 	))
 
 @coin_plugin.command
-@lightbulb.command(name = "coins_leaderboard", description = "Show the top 20 members with highest number of coins", aliases = ['coinslb', 'coinlb', 'cointop', 'coinstop'], auto_defer = True)
+@lightbulb.command(name = "coins_leaderboard", description = "Show the top 100 members with highest number of coins", aliases = ['coinslb', 'coinlb', 'cointop', 'coinstop'], auto_defer = True)
 @lightbulb.implements(commands.PrefixCommand, commands.SlashCommand)
 async def coinslbcmd(ctx : context.Context) -> None:
-	total_coins = coinsdata.find({}).sort("points", -1)
+	total_coins = coinsdata.find({}).sort("points", -1).limit(115)
 	top_20 = 1
+	"""
 	embed = hikari.Embed(
 		title= "Coins Leaderboard",
 		colour = randint(0, 0xffffff),
 		timestamp = datetime.now().astimezone()
 	)
+	"""
+	rank_pag = lightbulb.utils.EmbedPaginator(max_lines = 10)
+
+	@rank_pag.embed_factory()
+	def build_embed(page_index, page_content) -> hikari.Embed:
+		return hikari.Embed(
+			title = "Coins Leaderboard",
+			description = f"Here are the top 100 members.\n\n {page_content}",
+			colour = 0x76ffa1 
+		).set_footer(f"Page {page_index}/10")
+
 	async for user in total_coins:
 		try:
 			member = ctx.get_guild().get_member(int(user['user_ID']))
@@ -118,16 +130,23 @@ async def coinslbcmd(ctx : context.Context) -> None:
 			continue
 		if member == None:
 			continue
+		"""
 		embed.add_field(
 			name = f"{top_20} : {member.display_name}",
 			value = f"{user['points']}",
 			inline = True
 		)
+		"""
+		rank_pag.add_line(f"**{top_20}. {member}**\t•\tBLC {user['points']}" if ctx.author.id != member.id else f"**-> {top_20}. {member} <-**\t•\tBLC {user['points']}")
+
 		top_20 += 1
-		if top_20 == 21:
+		if top_20 > 100:
 			break
 	
-	await ctx.respond(embed = embed)
+	navigator = lightbulb.utils.ButtonNavigator(rank_pag.build_pages(), timeout = 60)
+	await navigator.run(ctx)
+
+	#await ctx.respond(embed = embed)
 
 @coin_plugin.listener(event = hikari.MessageCreateEvent)
 async def on_message_create(event : hikari.MessageCreateEvent) -> None:
