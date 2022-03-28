@@ -269,15 +269,6 @@ async def study_time_stats(ctx : context.Context) -> None:
 		MemberStats = await membertime.find_one({"user_ID" : target.id})
 		
 	times = []
-	StatsEmbed = hikari.Embed(
-		title = f"{target.display_name}'s Study Stats",
-		description = f"\n**Current Streak :** {MemberStats['streak']}",
-		colour = randint(0, 0xffffff)
-	).set_footer(
-		text = "Stats reset between 12am and 1am."
-	).set_thumbnail(
-		target.avatar_url or target.default_avatar_url
-	)
 
 	for mins in (
 		MemberStats["total"],
@@ -296,7 +287,20 @@ async def study_time_stats(ctx : context.Context) -> None:
 	video = str(times[4][0]) + " Hrs " + str(times[4][1]) + " Mins"
 	stream = str(times[5][0]) + " Hrs " + str(times[5][1]) + " Mins"
 
-	StatsEmbed.add_field(
+	if int(MemberStats['video']) >= 600:
+		descrip = f"\n**Current Streak :** {MemberStats['streak']}\nYou are eligible for the Spotify Premium League!"
+	else:
+		descrip = f"\n**Current Streak :** {MemberStats['streak']}"
+
+	StatsEmbed = hikari.Embed(
+		title = f"{target.display_name}'s Study Stats",
+		description = descrip,
+		colour = randint(0, 0xffffff)
+	).set_footer(
+		text = "Stats reset between 12am and 1am."
+	).set_thumbnail(
+		target.avatar_url or target.default_avatar_url
+	).add_field(
 		name = "Total",
 		value = total,
 		inline = True
@@ -327,7 +331,7 @@ async def study_time_stats(ctx : context.Context) -> None:
 @study_plugin.command
 @lightbulb.command(name = "Study Stats", description = "Fetch the time you/mentioned user have spent studying/working in the Study VCs", auto_defer = True)
 @lightbulb.implements(commands.UserCommand)
-async def study_time_stats(ctx : context.Context) -> None:
+async def study_time_stats_user_cmd(ctx : context.Context) -> None:
 	target = ctx.get_guild().get_member(ctx.options.target)
 	
 	MemberStats = await membertime.find_one({"user_ID" : target.id})
@@ -336,17 +340,7 @@ async def study_time_stats(ctx : context.Context) -> None:
 		MemberStats = await membertime.find_one({"user_ID" : target.id})
 		
 	times = []
-	StatsEmbed = hikari.Embed(
-		title = f"{target.display_name}'s Study Stats",
-		description = f"\n**Current Streak :** {MemberStats['streak']}",
-		colour = randint(0, 0xffffff)
-	).set_footer(
-		text = "Stats reset between 12am and 1am."
-	).set_thumbnail(
-		target.avatar_url or target.default_avatar_url
-	)
 	
-
 	for mins in (
 		MemberStats["total"],
 		MemberStats["daily"],
@@ -364,7 +358,20 @@ async def study_time_stats(ctx : context.Context) -> None:
 	video = str(times[4][0]) + " Hrs " + str(times[4][1]) + " Mins"
 	stream = str(times[5][0]) + " Hrs " + str(times[5][1]) + " Mins"
 
-	StatsEmbed.add_field(
+	if int(MemberStats['video']) >= 600:
+		descrip = f"\n**Current Streak :** {MemberStats['streak']}\nYou are eligible for the Spotify Premium League!"
+	else:
+		descrip = f"\n**Current Streak :** {MemberStats['streak']}"
+
+	StatsEmbed = hikari.Embed(
+		title = f"{target.display_name}'s Study Stats",
+		description = descrip,
+		colour = randint(0, 0xffffff)
+	).set_footer(
+		text = "Stats reset between 12am and 1am."
+	).set_thumbnail(
+		target.avatar_url or target.default_avatar_url
+	).add_field(
 		name = "Total",
 		value = total,
 		inline = True
@@ -391,6 +398,205 @@ async def study_time_stats(ctx : context.Context) -> None:
 	)
 
 	await ctx.respond(embed = StatsEmbed, flags = hikari.MessageFlag.EPHEMERAL)
+
+@study_streak_cmd_group.child
+@lightbulb.option("compare_to", "The user to compare your stats to", hikari.User, required = True)
+@lightbulb.command("compare", "Compare your study stats with another user", auto_defer = True)
+@lightbulb.implements(commands.PrefixSubCommand, commands.SlashSubCommand)
+async def study_compare_cmd(ctx : context.Context) -> None:
+	target = ctx.get_guild().get_member(ctx.options.compare_to)
+
+	if target.id == ctx.author.id:
+		return await ctx.respond("<:Hmmmmm:839015631922790450> You cannot compare yourself with yourself (or can you?)")
+
+	TargetStats = await membertime.find_one({"user_ID" : target.id})
+	if not TargetStats:
+		await add_member_to_db(target.id)
+		TargetStats = await membertime.find_one({"user_ID" : target.id})
+	
+	AuthorStats = await membertime.find_one({"user_ID" : ctx.author.id})
+	if not AuthorStats:
+		await add_member_to_db(ctx.author.id)
+		AuthorStats = await membertime.find_one({"user_ID" : ctx.author.id})
+	
+	TargetTimes = []
+	AuthorTimes = []
+
+	for mins in (
+		TargetStats["total"],
+		TargetStats["daily"],
+		TargetStats["weekly"],
+		TargetStats["monthly"],
+		TargetStats["video"],
+		TargetStats["stream"]
+	):
+		TargetTimes.append(MinutesToHours(mins))
+		
+	TargetTotal = str(TargetTimes[0][0]) + " Hrs " + str(TargetTimes[0][1]) + " Mins"
+	TargetDaily = str(TargetTimes[1][0]) + " Hrs " + str(TargetTimes[1][1]) + " Mins"
+	TargetWeekly = str(TargetTimes[2][0]) + " Hrs " + str(TargetTimes[2][1]) + " Mins"
+	TargetMonthly = str(TargetTimes[3][0]) + " Hrs " + str(TargetTimes[3][1]) + " Mins"
+	TargetVideo = str(TargetTimes[4][0]) + " Hrs " + str(TargetTimes[4][1]) + " Mins"
+	TargetStream = str(TargetTimes[5][0]) + " Hrs " + str(TargetTimes[5][1]) + " Mins"
+
+	for mins in (
+		AuthorStats["total"],
+		AuthorStats["daily"],
+		AuthorStats["weekly"],
+		AuthorStats["monthly"],
+		AuthorStats["video"],
+		AuthorStats["stream"]
+	):
+		AuthorTimes.append(MinutesToHours(mins))
+		
+	AuthorTotal = str(AuthorTimes[0][0]) + " Hrs " + str(AuthorTimes[0][1]) + " Mins"
+	AuthorDaily = str(AuthorTimes[1][0]) + " Hrs " + str(AuthorTimes[1][1]) + " Mins"
+	AuthorWeekly = str(AuthorTimes[2][0]) + " Hrs " + str(AuthorTimes[2][1]) + " Mins"
+	AuthorMonthly = str(AuthorTimes[3][0]) + " Hrs " + str(AuthorTimes[3][1]) + " Mins"
+	AuthorVideo = str(AuthorTimes[4][0]) + " Hrs " + str(AuthorTimes[4][1]) + " Mins"
+	AuthorStream = str(AuthorTimes[5][0]) + " Hrs " + str(AuthorTimes[5][1]) + " Mins"
+
+	CompareEmbed = hikari.Embed(
+		title = f"Comparing: {ctx.author} v/s {target}",
+		description = f"Comparing stats since last reset.",
+		colour = randint(0, 0xffffff)
+	).add_field(
+		"Current Streak:",
+		f"**{ctx.author} : {AuthorStats['streak']}**\n{target} : {TargetStats['streak']}" if AuthorStats["streak"] >= TargetStats["streak"]
+		else f"{ctx.author} : {AuthorStats['streak']}\n**{target} : {TargetStats['streak']}**",
+		inline = True
+	).add_field(
+		"Total Times:",
+		f"**{ctx.author} : {AuthorTotal}**\n{target} : {TargetTotal}" if AuthorStats["total"] >= TargetStats["total"]
+		else f"{ctx.author} : {AuthorTotal}\n**{target} : {TargetTotal}**",
+		inline = True
+	).add_field(
+		"Daily Times:",
+		f"**{ctx.author} : {AuthorDaily}**\n{target} : {TargetDaily}" if AuthorStats["daily"] >= TargetStats["daily"]
+		else f"{ctx.author} : {AuthorDaily}\n**{target} : {TargetDaily}**",
+		inline = True
+	).add_field(
+		"Weekly Times:",
+		f"**{ctx.author} : {AuthorWeekly}**\n{target} : {TargetWeekly}" if AuthorStats["weekly"] >= TargetStats["weekly"]
+		else f"{ctx.author} : {AuthorWeekly}\n**{target} : {AuthorWeekly}**",
+		inline = True
+	).add_field(
+		"Monthly Times:",
+		f"**{ctx.author} : {AuthorMonthly}**\n{target} : {TargetMonthly}" if AuthorStats["monthly"] >= TargetStats["monthly"]
+		else f"{ctx.author} : {AuthorMonthly}\n**{target} : {TargetMonthly}**",
+		inline = True
+	).add_field(
+		"Camera On Times:",
+		f"**{ctx.author} : {AuthorVideo}**\n{target} : {TargetVideo}" if AuthorStats["video"] >= TargetStats["video"]
+		else f"{ctx.author} : {AuthorVideo}\n**{target} : {TargetVideo}**",
+		inline = True
+	).add_field(
+		"Stream On Times:",
+		f"**{ctx.author} : {AuthorStream}**\n{target} : {TargetStream}" if AuthorStats["stream"] >= TargetStats["stream"]
+		else f"{ctx.author} : {AuthorStream}\n**{target} : {TargetStream}**",
+		inline = True
+	)
+
+	await ctx.respond(embed = CompareEmbed)
+
+@study_plugin.command
+@lightbulb.command("Compare Study Stats", "Compare your study stats with another user", auto_defer = True)
+@lightbulb.implements(commands.UserCommand)
+async def study_compare_cmd(ctx : context.Context) -> None:
+	target = ctx.get_guild().get_member(ctx.options.target)
+
+	if target.id == ctx.author.id:
+		return await ctx.respond("<:Hmmmmm:839015631922790450> You cannot compare yourself with yourself (or can you?)")
+
+	TargetStats = await membertime.find_one({"user_ID" : target.id})
+	if not TargetStats:
+		await add_member_to_db(target.id)
+		TargetStats = await membertime.find_one({"user_ID" : target.id})
+	
+	AuthorStats = await membertime.find_one({"user_ID" : ctx.author.id})
+	if not AuthorStats:
+		await add_member_to_db(ctx.author.id)
+		AuthorStats = await membertime.find_one({"user_ID" : ctx.author.id})
+	
+	TargetTimes = []
+	AuthorTimes = []
+
+	for mins in (
+		TargetStats["total"],
+		TargetStats["daily"],
+		TargetStats["weekly"],
+		TargetStats["monthly"],
+		TargetStats["video"],
+		TargetStats["stream"]
+	):
+		TargetTimes.append(MinutesToHours(mins))
+		
+	TargetTotal = str(TargetTimes[0][0]) + " Hrs " + str(TargetTimes[0][1]) + " Mins"
+	TargetDaily = str(TargetTimes[1][0]) + " Hrs " + str(TargetTimes[1][1]) + " Mins"
+	TargetWeekly = str(TargetTimes[2][0]) + " Hrs " + str(TargetTimes[2][1]) + " Mins"
+	TargetMonthly = str(TargetTimes[3][0]) + " Hrs " + str(TargetTimes[3][1]) + " Mins"
+	TargetVideo = str(TargetTimes[4][0]) + " Hrs " + str(TargetTimes[4][1]) + " Mins"
+	TargetStream = str(TargetTimes[5][0]) + " Hrs " + str(TargetTimes[5][1]) + " Mins"
+
+	for mins in (
+		AuthorStats["total"],
+		AuthorStats["daily"],
+		AuthorStats["weekly"],
+		AuthorStats["monthly"],
+		AuthorStats["video"],
+		AuthorStats["stream"]
+	):
+		AuthorTimes.append(MinutesToHours(mins))
+		
+	AuthorTotal = str(AuthorTimes[0][0]) + " Hrs " + str(AuthorTimes[0][1]) + " Mins"
+	AuthorDaily = str(AuthorTimes[1][0]) + " Hrs " + str(AuthorTimes[1][1]) + " Mins"
+	AuthorWeekly = str(AuthorTimes[2][0]) + " Hrs " + str(AuthorTimes[2][1]) + " Mins"
+	AuthorMonthly = str(AuthorTimes[3][0]) + " Hrs " + str(AuthorTimes[3][1]) + " Mins"
+	AuthorVideo = str(AuthorTimes[4][0]) + " Hrs " + str(AuthorTimes[4][1]) + " Mins"
+	AuthorStream = str(AuthorTimes[5][0]) + " Hrs " + str(AuthorTimes[5][1]) + " Mins"
+
+	CompareEmbed = hikari.Embed(
+		title = f"Comparing: {ctx.author} v/s {target}",
+		description = f"Comparing stats since last reset.",
+		colour = randint(0, 0xffffff)
+	).add_field(
+		"Current Streak:",
+		f"**{ctx.author} : {AuthorStats['streak']}**\n{target} : {TargetStats['streak']}" if AuthorStats["streak"] >= TargetStats["streak"]
+		else f"{ctx.author} : {AuthorStats['streak']}\n**{target} : {TargetStats['streak']}**",
+		inline = True
+	).add_field(
+		"Total Times:",
+		f"**{ctx.author} : {AuthorTotal}**\n{target} : {TargetTotal}" if AuthorStats["total"] >= TargetStats["total"]
+		else f"{ctx.author} : {AuthorTotal}\n**{target} : {TargetTotal}**",
+		inline = True
+	).add_field(
+		"Daily Times:",
+		f"**{ctx.author} : {AuthorDaily}**\n{target} : {TargetDaily}" if AuthorStats["daily"] >= TargetStats["daily"]
+		else f"{ctx.author} : {AuthorDaily}\n**{target} : {TargetDaily}**",
+		inline = True
+	).add_field(
+		"Weekly Times:",
+		f"**{ctx.author} : {AuthorWeekly}**\n{target} : {TargetWeekly}" if AuthorStats["weekly"] >= TargetStats["weekly"]
+		else f"{ctx.author} : {AuthorWeekly}\n**{target} : {AuthorWeekly}**",
+		inline = True
+	).add_field(
+		"Monthly Times:",
+		f"**{ctx.author} : {AuthorMonthly}**\n{target} : {TargetMonthly}" if AuthorStats["monthly"] >= TargetStats["monthly"]
+		else f"{ctx.author} : {AuthorMonthly}\n**{target} : {TargetMonthly}**",
+		inline = True
+	).add_field(
+		"Camera On Times:",
+		f"**{ctx.author} : {AuthorVideo}**\n{target} : {TargetVideo}" if AuthorStats["video"] >= TargetStats["video"]
+		else f"{ctx.author} : {AuthorVideo}\n**{target} : {TargetVideo}**",
+		inline = True
+	).add_field(
+		"Stream On Times:",
+		f"**{ctx.author} : {AuthorStream}**\n{target} : {TargetStream}" if AuthorStats["stream"] >= TargetStats["stream"]
+		else f"{ctx.author} : {AuthorStream}\n**{target} : {TargetStream}**",
+		inline = True
+	)
+
+	await ctx.respond(embed = CompareEmbed)
 
 class AcceptReset(miru.Button):
 	def __init__(self) -> None:

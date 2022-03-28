@@ -272,7 +272,7 @@ async def tickets_button(ctx : context.Context) -> None:
 async def startup_view(event : hikari.StartedEvent) -> None:
 	view = TicketButton()
 
-	c = await conn.execute("SELECT info FROM general_table WHERE title = TICKET-MESSAGE;")
+	c = await conn.execute("SELECT info FROM general_table WHERE title = 'TICKET-MESSAGE';")
 	message_id = await c.fetchone()
 	message_id = message_id[0]
 
