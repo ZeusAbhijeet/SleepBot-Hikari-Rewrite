@@ -55,7 +55,11 @@ async def create_ticket(ctx : Union[context.Context, miru.Context], reason : Uni
 		f"{ctx.member.mention}",
 		embed = hikari.Embed(
 			title = f"Ticket #{id + 1}",
-			description = f"Hey {ctx.member.mention}, a staff member will soon get in touch with you here. In the meantime, please elaborate on why you have opened this ticket so we can help you faster.",
+			description = (
+				f"Hey {ctx.member.mention}, a staff member will soon get in touch with you here. In the meantime, please elaborate on why you have opened this ticket so we can help you faster."
+				""
+				"To delete this ticket, type `/ticket close` and provide a reason for closing the ticket."
+			),
 			colour = 0x479760
 		).add_field(
 			"Reason for opening ticket:",
@@ -96,6 +100,9 @@ async def delete_ticket(ctx : context.Context, reason : Union[str, None], db) ->
 	).sort(key = lambda x : x.id , reverse = False)
 
 	user = ctx.get_guild().get_member(db[1])
+
+	if not user:
+		user = await ctx.bot.rest.fetch_user(db[1])
 
 	with open("TicketTranscript.txt", "w+") as f:
 		f.write(f"Ticket ID #{db[0]} opened by {user} ({user.id}). All times in this transcript are UTC.\n\n")

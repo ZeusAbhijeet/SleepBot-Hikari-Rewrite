@@ -60,7 +60,10 @@ async def add_member_to_db(userID : int) -> None:
 			"monthly" : 0,
 			"stream" : 0,
 			"video" : 0,
-			"streak" : 0
+			"streak" : 0,
+			"credits" : 0,
+			"today_cam" : 0,
+			"yesterday_cam" : 0
 		}
 	)
 
@@ -82,7 +85,11 @@ async def reset_daily_times() -> None:
 			{"user_ID" : info["user_ID"]},
 			{'$set' : {"yesterday" : info["daily"]}}
 		)
-		if info["yesterday"] > 0:
+		await membertime.update_one(
+			{"user_ID" : info["user_ID"]},
+			{'$set' : {"yesterday_cam" : info["today_cam"]}}
+		)
+		if info["yesterday_cam"] > 120:
 			await membertime.update_one(
 				{"user_ID" : info["user_ID"]},
 				{'$inc' : {"streak" : 1}}
@@ -92,9 +99,18 @@ async def reset_daily_times() -> None:
 				{"user_ID" : info["user_ID"]},
 				{'$set' : {"streak" : 0}}
 			)
+		if info["streak"] % 7 == 0:
+			await membertime.update_one(
+				{"user_ID" : info["user_ID"]},
+				{'$inc' : {"credits" : 1}}
+			)
 		await membertime.update_one(
 			{"user_ID" : info["user_ID"]},
 			{'$set' : {"daily" : 0}}
+		)
+		await membertime.update_one(
+			{"user_ID" : info["user_ID"]},
+			{'$set' : {"today_cam" : 0}}
 		)
 
 async def reset_weekly_times() -> None:
@@ -208,7 +224,7 @@ async def study_streak_cmd_group(ctx : context.Context) -> None:
 	description = 'Sort Option', 
 	type = str,
 	required = False,
-	choices = ['total', 'daily', 'weekly', 'monthly', 'video', 'stream'],
+	choices = ['total', 'daily', 'weekly', 'monthly', 'video', 'stream', 'streak', 'credits'],
 	default = 'total'
 )
 @lightbulb.command(
@@ -287,10 +303,10 @@ async def study_time_stats(ctx : context.Context) -> None:
 	video = str(times[4][0]) + " Hrs " + str(times[4][1]) + " Mins"
 	stream = str(times[5][0]) + " Hrs " + str(times[5][1]) + " Mins"
 
-	if int(MemberStats['video']) >= 600:
-		descrip = f"\n**Current Streak :** {MemberStats['streak']}\nYou are eligible for the Spotify Premium League!"
-	else:
-		descrip = f"\n**Current Streak :** {MemberStats['streak']}"
+	descrip = (
+		f"\n**Current Streak :** {MemberStats['streak']}"
+		f"\n**Credits:** {MemberStats['credits']}"
+	)
 
 	StatsEmbed = hikari.Embed(
 		title = f"{target.display_name}'s Study Stats",
@@ -358,10 +374,10 @@ async def study_time_stats_user_cmd(ctx : context.Context) -> None:
 	video = str(times[4][0]) + " Hrs " + str(times[4][1]) + " Mins"
 	stream = str(times[5][0]) + " Hrs " + str(times[5][1]) + " Mins"
 
-	if int(MemberStats['video']) >= 600:
-		descrip = f"\n**Current Streak :** {MemberStats['streak']}\nYou are eligible for the Spotify Premium League!"
-	else:
-		descrip = f"\n**Current Streak :** {MemberStats['streak']}"
+	descrip = (
+		f"\n**Current Streak :** {MemberStats['streak']}"
+		f"\n**Credits:** {MemberStats['credits']}"
+	)
 
 	StatsEmbed = hikari.Embed(
 		title = f"{target.display_name}'s Study Stats",
@@ -762,9 +778,9 @@ async def RefreshMemberTimes():
 		if member[1] == "STREAM":
 			timer = ("total", "daily", "weekly", "monthly", "stream")
 		elif member[1] == "VIDEO":
-			timer = ("total", "daily", "weekly", "monthly", "video")
+			timer = ("total", "daily", "weekly", "monthly", "video", "today_cam")
 		elif member[1] == "BOTH":
-			timer = ("total", "daily", "weekly", "monthly", "video", "stream")
+			timer = ("total", "daily", "weekly", "monthly", "video", "stream", "today_cam")
 		else:
 			timer = ("total", "daily", "weekly", "monthly")
 		await update_time(member[0], timer)

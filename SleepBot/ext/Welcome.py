@@ -21,8 +21,8 @@ def WelcomeEmbed(target : hikari.User) -> hikari.Embed:
 		name = "Read the rules",
 		value = f"Read the rules in the <#{int(Utils.RULECHANNELID)}> channel carefully"
 	).add_field(
-		name = "Check out the Server Guide Video",
-		value = "If you are new to discord, you can watch a tutorial video which will help you to go about the server.\n**Tutorial:** [Click here](https://youtu.be/AUimFYOBXYU?t=291)"
+		name = "Check out the Server Intro Video",
+		value = "If you are new to discord, you can watch an intro video which will help you to go about the server.\n**Intro:** [Click here](https://www.youtube.com/watch?v=WpLRLiT_rWU)"
 	).set_image(
 		'https://res.cloudinary.com/zeusabhijeet/image/upload/v1624014516/Clinify%20Stuff/Bluelearn_welcome_banner_1.gif'
 	).set_author(
@@ -41,7 +41,7 @@ async def welcome_dm(ctx : context.Context) -> None:
 	row = ctx.app.rest.build_action_row()
 	row.add_button(
 		hikari.ButtonStyle.LINK,
-		"https://youtu.be/AUimFYOBXYU?t=291"
+		"https://www.youtube.com/watch?v=WpLRLiT_rWU"
 	).set_label(
 		"Server Guide Video"
 	).add_to_container()
@@ -53,7 +53,7 @@ async def on_member_create(event : hikari.MemberCreateEvent) -> None:
 	row = event.app.rest.build_action_row()
 	row.add_button(
 		hikari.ButtonStyle.LINK,
-		"https://youtu.be/AUimFYOBXYU?t=291"
+		"https://www.youtube.com/watch?v=WpLRLiT_rWU"
 	).set_label(
 		"Server Guide Video"
 	).add_to_container()
