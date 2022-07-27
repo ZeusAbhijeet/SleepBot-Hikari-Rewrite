@@ -73,6 +73,28 @@ async def fun_petpat_cmd(ctx : context.Context) -> None:
 			content = f"An error occurred. API Status Code: {resp.status_code}",
 			flags = hikari.MessageFlag.EPHEMERAL
 		)
+
+@fun_cmd_grp.child
+@lightbulb.add_cooldown(60, 1, lightbulb.UserBucket)
+@lightbulb.option("text", "What's that you don't have?", type = str, required = False)
+@lightbulb.command("nomaidens", "No Maidens?", auto_defer = True)
+@lightbulb.implements(commands.PrefixSubCommand, commands.SlashSubCommand)
+async def fun_petpat_cmd(ctx : context.Context) -> None:
+	text : str = ctx.options.text if ctx.options.text is not None else "NO MAIDENS?"
+	
+	URL =  f'https://some-random-api.ml/canvas/nobitches?no={text.upper()}'
+	resp = get(URL)
+
+	if resp.status_code == 200:
+		await ctx.respond(
+			attachment = Bytes(resp.content, 'nomaidens.png'),
+			reply = True
+		)
+	elif resp.status_code != 200:
+		await ctx.respond(
+			content = f"An error occurred. API Status Code: {resp.status_code}",
+			flags = hikari.MessageFlag.EPHEMERAL
+		)
 	
 
 @fun_cmd_grp.set_error_handler()

@@ -99,7 +99,7 @@ async def reset_daily_times() -> None:
 				{"user_ID" : info["user_ID"]},
 				{'$set' : {"streak" : 0}}
 			)
-		if info["streak"] % 7 == 0:
+		if info["streak"] != 0 and info["streak"] % 7 == 0:
 			await membertime.update_one(
 				{"user_ID" : info["user_ID"]},
 				{'$inc' : {"credits" : 1}}
@@ -494,7 +494,7 @@ async def study_compare_cmd(ctx : context.Context) -> None:
 	).add_field(
 		"Weekly Times:",
 		f"**{ctx.author} : {AuthorWeekly}**\n{target} : {TargetWeekly}" if AuthorStats["weekly"] >= TargetStats["weekly"]
-		else f"{ctx.author} : {AuthorWeekly}\n**{target} : {AuthorWeekly}**",
+		else f"{ctx.author} : {AuthorWeekly}\n**{target} : {TargetWeekly}**",
 		inline = True
 	).add_field(
 		"Monthly Times:",
@@ -593,7 +593,7 @@ async def study_compare_cmd(ctx : context.Context) -> None:
 	).add_field(
 		"Weekly Times:",
 		f"**{ctx.author} : {AuthorWeekly}**\n{target} : {TargetWeekly}" if AuthorStats["weekly"] >= TargetStats["weekly"]
-		else f"{ctx.author} : {AuthorWeekly}\n**{target} : {AuthorWeekly}**",
+		else f"{ctx.author} : {AuthorWeekly}\n**{target} : {TargetWeekly}**",
 		inline = True
 	).add_field(
 		"Monthly Times:",

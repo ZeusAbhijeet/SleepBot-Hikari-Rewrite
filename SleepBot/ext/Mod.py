@@ -1,3 +1,4 @@
+import asyncio
 from typing import Tuple
 import hikari
 import lightbulb
@@ -8,9 +9,13 @@ from time import time
 from datetime import timedelta
 from lightbulb import commands, context
 
+from Utils import StaffRoleID
+
 mod_plugin = lightbulb.Plugin("Mod")
 
 MAX_MESSAGE_BULK_DELETE = datetime.timedelta(weeks=2) - datetime.timedelta(minutes=2)
+
+invite_spam : dict = {}
 
 def iter_messages(
     ctx: context.Context,
@@ -163,6 +168,52 @@ async def purge_cmd(ctx : context.Context) -> None:
 		break
 
 	await ctx.respond("Deleted messages", delete_after = 4)
+
+@mod_plugin.listener(hikari.MessageCreateEvent)
+async def on_message_create(event : hikari.MessageCreateEvent) -> None:
+	if event.channel_id is 752560332450299944:
+		return
+	try:
+		member = await event.app.rest.fetch_member(event.message.guild_id, event.author)
+	except:
+		return
+	if member:
+		roles = await member.fetch_roles()
+		for r in roles:
+			if r.id == StaffRoleID:
+				return
+	else:
+		return
+	if event.author.is_bot:
+		return
+	if event.message.content is not None:
+		try:
+			m = re.search(r'discord\.gg/([a-zA-Z]+(\w[a-zA-Z]+)+)', event.message.content).group()
+		except:
+			return
+		is_invite = await event.app.rest.fetch_invite(m.strip('discord.gg/'))
+		if is_invite.guild_id != event.message.guild_id:
+			await event.app.rest.create_message(
+				event.channel_id,
+				f"Uh Oh! {event.author.mention} You just posted an invite link to a different server in a non-promotion channel. Invite links to other servers are only allowed in <#752560332450299944>. Doing this repeatedly will result in consequences :>",
+				user_mentions = True
+			)
+			await event.message.delete()
+
+			if event.author_id in invite_spam.keys():
+				invite_spam[event.author_id] = invite_spam[event.author_id] + 1
+			else:
+				invite_spam[event.author_id] = 1
+			
+			if invite_spam[event.author_id] >= 3:
+				await event.message.member.kick(
+					reason = "Author commit invite spam"
+				)
+			
+			await asyncio.sleep(21600)
+			if invite_spam[event.author_id] > 0:
+				invite_spam[event.author_id] -= 1
+
 
 def load(bot : lightbulb.BotApp) -> None:
 	bot.add_plugin(mod_plugin)
