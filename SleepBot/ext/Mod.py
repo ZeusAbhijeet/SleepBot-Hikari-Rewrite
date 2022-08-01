@@ -9,7 +9,7 @@ from time import time
 from datetime import timedelta
 from lightbulb import commands, context
 
-from Utils import StaffRoleID
+from Utils import MODCHANNELID, SELFPROMOTIONCHANNELID, StaffRoleID
 
 mod_plugin = lightbulb.Plugin("Mod")
 
@@ -171,7 +171,7 @@ async def purge_cmd(ctx : context.Context) -> None:
 
 @mod_plugin.listener(hikari.MessageCreateEvent)
 async def on_message_create(event : hikari.MessageCreateEvent) -> None:
-	if event.channel_id is 752560332450299944:
+	if event.channel_id == SELFPROMOTIONCHANNELID:
 		return
 	try:
 		member = await event.app.rest.fetch_member(event.message.guild_id, event.author)
@@ -188,7 +188,7 @@ async def on_message_create(event : hikari.MessageCreateEvent) -> None:
 		return
 	if event.message.content is not None:
 		try:
-			m = re.search(r'discord\.gg/([a-zA-Z]+(\w[a-zA-Z]+)+)', event.message.content).group()
+			m = re.search(r'discord\.gg/([a-zA-Z0-9_]+(\w[a-zA-Z]+)+)', event.message.content).group()
 		except:
 			return
 		is_invite = await event.app.rest.fetch_invite(m.strip('discord.gg/'))
@@ -196,12 +196,30 @@ async def on_message_create(event : hikari.MessageCreateEvent) -> None:
 			await event.app.rest.create_message(
 				event.channel_id,
 				f"Uh Oh! {event.author.mention} You just posted an invite link to a different server in a non-promotion channel. Invite links to other servers are only allowed in <#752560332450299944>. Doing this repeatedly will result in consequences :>",
-				user_mentions = True
+				user_mentions = [event.author_id]
 			)
 			await event.message.delete()
 
+			await event.app.rest.create_message(
+				MODCHANNELID,
+				embed = hikari.Embed(
+					title = "SleepBot Anti-Invite",
+					description = f"Deleted a message containing an invite link. Message content: \n{event.message.content}",
+					colour = 0xe03636,
+					timestamp = datetime.datetime.now(tz = datetime.timezone.utc) 
+				).add_field(
+					name = "Sent by:",
+					value = f"{event.author.mention}\n({event.author} {event.author_id})",
+					inline = True
+				).add_field(
+					name = "Invite server:",
+					value = is_invite.guild.name,
+					inline = True
+				)
+			)
+
 			if event.author_id in invite_spam.keys():
-				invite_spam[event.author_id] = invite_spam[event.author_id] + 1
+				invite_spam[event.author_id] += 1
 			else:
 				invite_spam[event.author_id] = 1
 			
