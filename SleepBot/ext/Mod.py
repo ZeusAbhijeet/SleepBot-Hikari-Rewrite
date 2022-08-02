@@ -174,7 +174,7 @@ async def on_message_create(event : hikari.MessageCreateEvent) -> None:
 	if event.channel_id == SELFPROMOTIONCHANNELID:
 		return
 	try:
-		member = await event.app.rest.fetch_member(event.message.guild_id, event.author)
+		member = event.message.member
 	except:
 		return
 	if member:
@@ -183,12 +183,12 @@ async def on_message_create(event : hikari.MessageCreateEvent) -> None:
 			if r.id == StaffRoleID:
 				return
 	else:
-		return
+		pass
 	if event.author.is_bot:
 		return
 	if event.message.content is not None:
 		try:
-			m = re.search(r'discord\.gg/([a-zA-Z0-9_]+(\w[a-zA-Z]+)+)', event.message.content).group()
+			m = re.search(r'discord\.gg/([a-zA-Z0-9_]+)', event.message.content).group()
 		except:
 			return
 		is_invite = await event.app.rest.fetch_invite(m.strip('discord.gg/'))
@@ -215,6 +215,10 @@ async def on_message_create(event : hikari.MessageCreateEvent) -> None:
 					name = "Invite server:",
 					value = is_invite.guild.name,
 					inline = True
+				).add_field(
+					name = "Sent in Channel:",
+					value = f"<#{event.channel_id}>",
+					inline = True
 				)
 			)
 
@@ -224,9 +228,18 @@ async def on_message_create(event : hikari.MessageCreateEvent) -> None:
 				invite_spam[event.author_id] = 1
 			
 			if invite_spam[event.author_id] >= 3:
-				await event.message.member.kick(
-					reason = "Author commit invite spam"
-				)
+				try:
+					await member.ban(
+						reason = "Author commit invite spam",
+						delete_message_days = 1
+					)
+					await event.app.rest.unban_user(
+						event.message.guild_id,
+						event.author,
+						reason = "Softban complete hopefully"
+					)
+				except:
+					pass
 			
 			await asyncio.sleep(21600)
 			if invite_spam[event.author_id] > 0:
