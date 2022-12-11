@@ -122,7 +122,7 @@ async def sleepbot_about(ctx : context.Context) -> None:
 	).set_footer(
 		text = f"SleepBot v{__version__} | hikari v{hikari_version} | lightbulb v{lightbulb_version}"
 	)
-    row = ctx.app.rest.build_action_row()
+    row = ctx.app.rest.build_message_action_row()
     row.add_button(
     	hikari.ButtonStyle.LINK, 
     	"https://github.com/ZeusAbhijeet/SleepBot-Hikari-Rewrite"
@@ -150,7 +150,7 @@ async def bluelearn_about(ctx: context.Context) -> None:
 		icon = ctx.author.avatar_url
 	)
 
-    row = ctx.app.rest.build_action_row()
+    row = ctx.app.rest.build_message_action_row()
     row.add_button(
 		hikari.ButtonStyle.LINK,
 		"https://www.bluelearn.in/"

@@ -169,8 +169,8 @@ async def purge_cmd(ctx : context.Context) -> None:
 
 	await ctx.respond("Deleted messages", delete_after = 4)
 
-@mod_plugin.listener(hikari.MessageCreateEvent)
-async def on_message_create(event : hikari.MessageCreateEvent) -> None:
+@mod_plugin.listener(hikari.GuildMessageCreateEvent)
+async def on_message_create(event : hikari.GuildMessageCreateEvent) -> None:
 	if event.channel_id == SELFPROMOTIONCHANNELID:
 		return
 	try:
@@ -189,9 +189,14 @@ async def on_message_create(event : hikari.MessageCreateEvent) -> None:
 	if event.message.content is not None:
 		try:
 			m = re.search(r'discord\.gg/([a-zA-Z0-9_]+)', event.message.content).group()
+			is_invite = await event.app.rest.fetch_invite(m.strip('discord.gg/'))
 		except:
-			return
-		is_invite = await event.app.rest.fetch_invite(m.strip('discord.gg/'))
+			try:
+				m = re.search(r'discord\.com/invite/([a-zA-Z0-9_]+)', event.message.content).group()
+				is_invite = await event.app.rest.fetch_invite(m.strip('discord.com/invite/'))
+			except:
+				return
+		
 		if is_invite.guild_id != event.message.guild_id:
 			await event.app.rest.create_message(
 				event.channel_id,

@@ -38,7 +38,7 @@ def WelcomeEmbed(target : hikari.User) -> hikari.Embed:
 @lightbulb.implements(commands.PrefixCommand, commands.SlashCommand)
 async def welcome_dm(ctx : context.Context) -> None:
 	target = ctx.options.user or ctx.user
-	row = ctx.app.rest.build_action_row()
+	row = ctx.app.rest.build_message_action_row()
 	row.add_button(
 		hikari.ButtonStyle.LINK,
 		"https://www.youtube.com/watch?v=WpLRLiT_rWU"
@@ -50,7 +50,7 @@ async def welcome_dm(ctx : context.Context) -> None:
 
 @welcome_plugin.listener(event = hikari.MemberCreateEvent)
 async def on_member_create(event : hikari.MemberCreateEvent) -> None:
-	row = event.app.rest.build_action_row()
+	row = event.app.rest.build_message_action_row()
 	row.add_button(
 		hikari.ButtonStyle.LINK,
 		"https://www.youtube.com/watch?v=WpLRLiT_rWU"

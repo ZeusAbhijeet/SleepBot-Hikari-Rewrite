@@ -72,6 +72,11 @@ STUDYTOGETHERCHANNELID = int(770940461337804810)
 FocusChannelID = FocusChannelID[0]
 TICKETSCATEGORYID = int(838101726078566420)
 TICKETSLOGCHANNELID = int(765567312455401472)
+SELFPROMOTIONCHANNELID = int(752560332450299944)
+MODCHANNELID = int(836295503175876608)
+STARBOARDCHANNEL = int(783517875192987709)
+STARTHRESHOLD = int(5)
+STAREMOJI = "\u2B50"
 
 MAXXP : int = MAX_XP[0]
 MINXP : int = MIN_XP[0]
@@ -96,10 +101,10 @@ async def is_bot_cmd_chnl(ctx : context.Context) -> bool:
 	return int(ctx.channel_id) == int(POINTCMDCHANNELID)
 
 async def is_point_chnl(channel_id) -> bool:
-	for chnl in POINT_EARN_CHNLS:
-		if int(chnl[0]) == int(channel_id):
-			return True
-	return False
+	for chnl in NOXPCHANNEL:
+		if int(chnl) == int(channel_id):
+			return False
+	return True
 
 async def is_study_channel(ctx : lightbulb.context.Context) -> bool:
 	return int(ctx.channel_id) == STUDYTOGETHERCHANNELID

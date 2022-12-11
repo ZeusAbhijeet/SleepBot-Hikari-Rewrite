@@ -41,7 +41,7 @@ async def tag_group(ctx : context.Context) -> None:
 		await ctx.respond(query[0])
 
 @tag_group.child
-@lightbulb.option("name", "Name of the tag to fetch", type = str, required = True)
+@lightbulb.option("name", "Name of the tag to fetch", type = str, required = True, modifier = lightbulb.OptionModifier.CONSUME_REST)
 @lightbulb.command("fetch", "Fetch an existing tag.", auto_defer = True)
 @lightbulb.implements(commands.PrefixSubCommand, commands.SlashSubCommand)
 async def tag_fetch(ctx : context.Context) -> None:
@@ -164,7 +164,7 @@ async def tag_delete(ctx : context.Context) -> None:
 		return
 	
 	if not ctx.author.id == owner[0]:
-		member : hikari.Member = await ctx.get_guild().get_member(ctx.author)
+		member : hikari.Member = ctx.get_guild().get_member(ctx.author)
 		permissions = lightbulb.utils.permissions_for(member)
 		if hikari.Permissions.ADMINISTRATOR in permissions:
 			await conn.execute("DELETE FROM tags_table WHERE name = ?", (tag_name,))

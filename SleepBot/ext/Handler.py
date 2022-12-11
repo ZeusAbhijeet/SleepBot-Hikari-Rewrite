@@ -26,7 +26,8 @@ async def on_error(event: lightbulb.CommandErrorEvent) -> None:
 	elif isinstance(exception, lightbulb.MissingRequiredPermission):
 		await event.context.respond(f"You do not have permissions to run this command. You require {exception.missing_perms} to run this command")
 	else:
-		raise exception
+		await event.context.respond(f"Something went wrong.\nError text: ```{exception}```")
+		raise event.exception
 
 def load(bot : lightbulb.BotApp) -> None:
 	bot.add_plugin(handler_plugin)

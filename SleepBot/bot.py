@@ -13,18 +13,45 @@ from Utils import LOGCHANNELID
 with open("./Secrets/token", 'r') as f:
 	token = f.read().strip()
 
+intent = (
+	hikari.Intents.ALL_GUILDS_UNPRIVILEGED |
+	hikari.Intents.GUILD_MEMBERS |
+	hikari.Intents.ALL_MESSAGES |
+	hikari.Intents.MESSAGE_CONTENT
+)
+
+DEFAULT = (
+    hikari.Intents.GUILDS
+    | hikari.Intents.GUILD_BANS
+    | hikari.Intents.GUILD_EMOJIS
+    | hikari.Intents.GUILD_INTEGRATIONS
+    | hikari.Intents.GUILD_WEBHOOKS
+    | hikari.Intents.GUILD_INVITES
+    | hikari.Intents.GUILD_VOICE_STATES
+    | hikari.Intents.GUILD_MESSAGES
+    | hikari.Intents.GUILD_MESSAGE_REACTIONS
+    | hikari.Intents.GUILD_MESSAGE_TYPING
+    | hikari.Intents.DM_MESSAGES
+    | hikari.Intents.DM_MESSAGE_REACTIONS
+    | hikari.Intents.DM_MESSAGE_TYPING
+    | hikari.Intents.GUILD_SCHEDULED_EVENTS
+	| hikari.Intents.MESSAGE_CONTENT
+	| hikari.Intents.GUILD_MEMBERS
+    )
+
 bot = lightbulb.BotApp(
 	token = token,
 	prefix = lightbulb.when_mentioned_or('?'),
-	intents = hikari.Intents.ALL,
+	intents = DEFAULT,
 	default_enabled_guilds = GUILD_ID,
 	delete_unbound_commands = True,
 	case_insensitive_prefix_commands = True,
 	owner_ids = (OWNER_ID,),
 	allow_color=False
 )
+
 tasks.load(bot)
-miru.load(bot)
+miru.install(bot)
 
 @bot.listen(hikari.StartingEvent)
 async def starting_listener(event : hikari.StartingEvent) -> None:

@@ -33,8 +33,10 @@ membertime : motor.motor_asyncio.AsyncIOMotorCollection = db.membertime
 TIMER_UPDATE_INTERVAL = 1 # minutes
 KICK_STALKERS_AFTER = 45 # seconds
 
-CAMS_ON_VC = 770670934565715998
+CAMS_ON_VC = 1015286325919879178
 STUDYVC1 = 818011398231687178
+
+StudyVCIDs.append(CAMS_ON_VC)
 
 STUDYING_ROLE = 816873155246817290
 
@@ -63,7 +65,9 @@ async def add_member_to_db(userID : int) -> None:
 			"streak" : 0,
 			"credits" : 0,
 			"today_cam" : 0,
-			"yesterday_cam" : 0
+			"today_stream" : 0,
+			"yesterday_cam" : 0,
+			"yesterday_stream" : 0
 		}
 	)
 
@@ -89,21 +93,20 @@ async def reset_daily_times() -> None:
 			{"user_ID" : info["user_ID"]},
 			{'$set' : {"yesterday_cam" : info["today_cam"]}}
 		)
-		if info["yesterday_cam"] > 120:
-			await membertime.update_one(
-				{"user_ID" : info["user_ID"]},
-				{'$inc' : {"streak" : 1}}
-			)
-		else:
+		await membertime.update_one(
+			{"user_ID" : info["user_ID"]},
+			{'$set' : {"yesterday_stream" : info["today_stream"]}}
+		)
+		if info["yesterday_stream"] < 30:
 			await membertime.update_one(
 				{"user_ID" : info["user_ID"]},
 				{'$set' : {"streak" : 0}}
 			)
-		if info["streak"] != 0 and info["streak"] % 7 == 0:
-			await membertime.update_one(
-				{"user_ID" : info["user_ID"]},
-				{'$inc' : {"credits" : 1}}
-			)
+#		if info["streak"] != 0 and info["streak"] % 7 == 0:
+#			await membertime.update_one(
+#				{"user_ID" : info["user_ID"]},
+#				{'$inc' : {"credits" : 1}}
+#			)
 		await membertime.update_one(
 			{"user_ID" : info["user_ID"]},
 			{'$set' : {"daily" : 0}}
@@ -112,6 +115,17 @@ async def reset_daily_times() -> None:
 			{"user_ID" : info["user_ID"]},
 			{'$set' : {"today_cam" : 0}}
 		)
+		await membertime.update_one(
+			{"user_ID" : info["user_ID"]},
+			{'$set' : {"today_stream" : 0}}
+		)
+	streakmembers = membertime.find({'yesterday_stream' : {'$gt' : 30}})
+	async for mem in streakmembers:
+		await mem.update_one(
+				{"user_ID" : mem["user_ID"]},
+				{'$inc' : {"streak" : 1}}
+			)
+
 
 async def reset_weekly_times() -> None:
 	memberinfo = membertime.find({'weekly' : {'$gt' : 0}})
@@ -186,7 +200,7 @@ async def resetspecificmember(user : hikari.User) -> None:
 		await add_member_to_db(user.id)
 		return
 	
-	timers = ['total', 'daily', 'yesterday', 'weekly', 'monthly', 'stream', 'video', 'streak']
+	timers = ['total', 'daily', 'yesterday', 'weekly', 'monthly', 'stream', 'video', 'streak', 'credits', 'today_cam', 'today_stream', 'yesterday_cam', 'yesterday_stream']
 
 	for time in timers:
 		await membertime.update_one(
@@ -710,6 +724,14 @@ async def resetdailymanual(ctx : context.Context) -> None:
 	await reset_daily_times()
 	await ctx.respond("Done")
 
+@study_plugin.command
+@lightbulb.add_checks(lightbulb.owner_only)
+@lightbulb.command("resetall", description = 'Resets everything')
+@lightbulb.implements(commands.PrefixCommand)
+async def resetallmanual(ctx : context.Context) -> None:
+	result = await membertime.delete_many({})
+	await ctx.respond(f"Deleted {result.deleted_count} entries.")
+
 @study_plugin.listener(hikari.VoiceStateUpdateEvent)
 async def on_voice_state_update(event : hikari.VoiceStateUpdateEvent) -> None:
 	if event.state.member.is_bot:
@@ -746,7 +768,7 @@ async def on_message_create(event : hikari.GuildMessageCreateEvent):
 		return
 	if StaffRoleID in event.get_member().role_ids:
 		return
-	mention : List[hikari.User] = event.message.mentions.users
+	mention : List[hikari.Snowflake, hikari.User] = list(event.message.user_mentions)
 	for m in mention:
 		mentioneduser = await study_plugin.app.rest.fetch_member(event.guild_id, m)
 		if mentioneduser.is_bot:
@@ -776,11 +798,11 @@ async def RefreshMemberTimes():
 	StudyingMembers = await GetFocusedMembers()
 	for member in StudyingMembers:
 		if member[1] == "STREAM":
-			timer = ("total", "daily", "weekly", "monthly", "stream")
+			timer = ("total", "daily", "weekly", "monthly", "stream", "today_stream")
 		elif member[1] == "VIDEO":
 			timer = ("total", "daily", "weekly", "monthly", "video", "today_cam")
 		elif member[1] == "BOTH":
-			timer = ("total", "daily", "weekly", "monthly", "video", "stream", "today_cam")
+			timer = ("total", "daily", "weekly", "monthly", "video", "stream", "today_cam", "today_stream")
 		else:
 			timer = ("total", "daily", "weekly", "monthly")
 		await update_time(member[0], timer)

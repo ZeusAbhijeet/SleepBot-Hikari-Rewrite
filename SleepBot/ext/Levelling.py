@@ -509,14 +509,17 @@ async def on_message_create(event : hikari.MessageCreateEvent) -> None:
 				description = f"{event.author.mention} has leveled up to level {Afterlvl}!" if Afterlvl not in role_levels else f"{event.author.mention} has leveled up to level {Afterlvl} and has received <@&{LevelRoleID}>",
 				colour = randint(0, 0xffffff)
 			)
-
-			await event.app.rest.create_message(
+			
+			lvlupmsg = await event.app.rest.create_message(
 				channel = event.channel_id,
-				embed = embed
+				embed = embed,
 			)
+			await asyncio.sleep(5)
+			await lvlupmsg.delete()
+			
 			
 		brake.append(event.author_id)
-		await asyncio.sleep(int(XPTIMEOUT))
+		await asyncio.sleep(int(60))
 		brake.remove(event.author_id)
 
 def load(bot : lightbulb.BotApp) -> None:

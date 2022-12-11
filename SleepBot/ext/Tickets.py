@@ -165,7 +165,7 @@ async def ticket_open(ctx : context.Context) -> None:
 	ticket_channel = await create_ticket(ctx, ctx.options.reason)
 	
 	await ctx.respond(
-		f"{ctx.author.mention}, Ticket created in {ticket_channel.mention}.", 
+		f"{ctx.author.mention}, Ticket created in <#{ticket_channel.id}>.", 
 		flags = hikari.MessageFlag.EPHEMERAL,
 		delete_after = 10,
 		user_mentions = [ctx.author]
@@ -241,7 +241,7 @@ class TicketButton(miru.View):
 	async def create_ticket(self, button : miru.Button, ctx : miru.Context) -> None:
 		ticket_channel = await create_ticket(ctx, reason = None)
 		await ctx.respond(
-			f"{ctx.member.mention}, Ticket created in {ticket_channel.mention}.",
+			f"{ctx.member.mention}, Ticket created in <#{ticket_channel.id}>.",
 			flags = hikari.MessageFlag.EPHEMERAL
 		)
 
@@ -283,7 +283,9 @@ async def startup_view(event : hikari.StartedEvent) -> None:
 	message_id = await c.fetchone()
 	message_id = message_id[0]
 
-	view.start_listener(message_id)
+	message = await event.app.rest.fetch_message(838101926838009906, message_id)
+
+	await view.start(message)
 
 def load(bot : lightbulb.BotApp) -> None:
 	bot.add_plugin(tickets_plugin)
