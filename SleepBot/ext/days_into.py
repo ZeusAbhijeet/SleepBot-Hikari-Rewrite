@@ -27,9 +27,9 @@ while True:
                 else:
                     into_2023 += 28
         
-    into_2023 += day
-    text = (f"{into_2023} days passed in year {year}")
-    await into_2023_channel.send(text)
+        into_2023 += day
+        text = (f"{into_2023} days passed in year {year}")
+        await into_2023_channel.send(text)
 
     old_day = day
     into_2023 = 0
